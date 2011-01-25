@@ -1,0 +1,13 @@
+CASPIAN - Modern gridding software for spatial data
+
+== Building ==
+Run 'make'. The only non-standard library used is PROJ.4.
+
+Run 'make docs' to build documentation, which uses LaTeX (and latexmk to build).
+
+For convenience, a debug build can be built. Run 'make debug'
+
+The mapping function is selected at compile time (currently, this may change later). To select the mapping function, edit the Makefile and change the DFLAGS from '-DREDUCE_MEDIAN' to another value (currently -DREDUCE_MEAN, -DREDUCE_NEAREST_NEIGHBOUR)
+
+== Using ==
+Run bin/caspian --help for usage information. See the built docs for a higher level description.

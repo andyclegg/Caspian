@@ -3,13 +3,24 @@ LDFLAGS=-lm -lproj
 CFLAGS=-std=c99 -Wall
 DFLAGS=-DREDUCE_MEDIAN
 
+all: caspian debug docs projcalc
+
+projcalc: src/projection_calculator.c
+	gcc $(CFLAGS) $(LDFLAGS) $? -o bin/projcalc
+
 caspian: $(SOURCE_FILES)
 	gcc $(CFLAGS) $(LDFLAGS) $(SOURCE_FILES) $(DFLAGS) -O3 -mtune=native -o bin/caspian
 
 debug: $(SOURCE_FILES)
 	gcc $(CFLAGS) $(LDFLAGS) $(SOURCE_FILES) $(DFLAGS) -DDEBUG -ggdb -o bin/debug
 
-all: caspian
+docs: src/doc/caspian.tex
+	latexmk -cd $? -pdfdvi
+	cp -f src/doc/caspian.pdf doc/caspian.pdf
+
+quickview: src/quickview
+	cp src/quickview bin/quickview
 
 clean:
-	rm -f bin/*
+	rm -f bin/* doc/*
+	latexmk -c src/doc/caspian.tex

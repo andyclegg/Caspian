@@ -1,0 +1,34 @@
+== Types of Node ==
+
+=== Leaf Node ===
+struct leaf_node {
+   float latitude;
+   float longitude;
+   float data;
+   float quality;
+   float time;
+}
+
+=== Bounding Node ===
+struct bounding_node {
+   float min_lat;
+   float max_lat;
+   float min_lon;
+   float max_lon;
+   int num_children;
+   union {
+      bounding_node *child_bounding_nodes[MAX_CHILDREN];
+      leaf_node *child_leaf_nodes[MAX_CHILDREN];
+   }
+}
+
+root = bounding node
+
+
+== K-D tree ==
+One array of 'tree' structs, looking like:
+struct { short disc; float value }
+information stored compactly - children of node N are at 2N and 2N+1. (could this affect localization of access?)
+
+One array of structs representing the data points - this has the same number of elements as the bottom layer of the 'tree'. Relatively simple calculation
+based on N and D (depth of tree) gives the index into this array...
