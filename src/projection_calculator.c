@@ -5,8 +5,9 @@
 
 int main(int argc, char **argv) {
 
-   if (argc != 10) {
+   if (argc != 8) {
       printf("Incorrect number of args (%d)\n", argc);
+      printf("Usage: projection_string n_lat s_lat e_lon w_lon hres vres\n");
       return -1;
    }
 
@@ -15,8 +16,8 @@ int main(int argc, char **argv) {
    float s_lat = atof(argv[3]);
    float e_lon = atof(argv[4]);
    float w_lon = atof(argv[5]);
-   int hres = atoi(argv[8]);
-   int vres = atoi(argv[9]);
+   int hres = atoi(argv[6]);
+   int vres = atoi(argv[7]);
 
 
    // Initialize the projection
@@ -40,15 +41,12 @@ int main(int argc, char **argv) {
    float centre_u = (tr_output.u + bl_output.u)/2.0;
    float centre_v = (tr_output.v + bl_output.v)/2.0;
 
-   float height = (tr_output.v - bl_output.v) / (float) vres;
-   float width = (tr_output.u - bl_output.u) / (float) hres;
+   int height = (int) ceil(fabs(tr_output.v - bl_output.v) / (float) vres);
+   int width = (int) ceil(fabs(tr_output.u - bl_output.u) / (float) hres);
 
 
-   printf("Top Right: (%f, %f)\n", tr_output.u, tr_output.v);
-   printf("Bottom Left: (%f, %f)\n", bl_output.u, bl_output.v);
-   printf("\n");
    printf("Centre: (%f, %f)\n", centre_u, centre_v);
-   printf("Width: %f, Height: %f\n", width, height);
+   printf("Width: %d, Height: %d\n", width, height);
 
 
    return 0;

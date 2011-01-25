@@ -1,0 +1,18 @@
+== Cell based approach ==
+
+A cell in the output grid can only be stated to represent a polygon over the earth's surface
+ - For a geographic projection, this cell is simple - a square (in terms of latlon)
+ - At the other end, a stereographic projection has a complex polygon
+
+For every pixel in the output grid, the corresponding cell must be generated (in terms of latlon). We can navigate
+the projection plane in its native units (metres?). 
+
+
+== Preprocessed approach ==
+Project all points as they are loaded - load the points into the data structure as normal. Simply walk the output grid,
+generate cells in terms of map units (metres), then apply the data reduction.
+ - Exactly mimics ms2gt in terms of preprojecting the data, but still allows for much finer control of data reduction.
+ - Need to specify the area in terms of central lat/lon, h/v res, and h/v pixels (be careful to allow both odd and even sizes)
+ - Disadvantage: Can only reuse index for each product (not for each area as before)
+
+

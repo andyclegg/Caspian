@@ -1,0 +1,64 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{fancyhdr}
+\usepackage[hmargin=1.75cm,vmargin=1.75cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{breakurl}
+\usepackage[numbers]{natbib}
+\usepackage{url}
+\usepackage{subfigure}
+\usepackage{booktabs}
+\bibliographystyle{unsrtnat}
+\title{Caspian}
+\author{Andrew Clegg\\\href{mailto:andy2.0@gmail.com}{andy2.0@gmail.com}}
+
+\begin{document}
+\maketitle
+\abstract{\textit{
+Caspian is a spatial data gridder operating on binary files containing latitudes, longitudes and observations. Caspian can project these observations onto a grid, reducing data using an appropriate algorithm.
+}}
+\tableofcontents
+\section{Overview}
+Gridding is the process of placing observed spatial data (from satellites, planes, or \textit{in-situ} sensors) onto a regular spatial grid. This are many methods to achieving this with different advantages and disadvantages; these include warping an image by comparing known control points, formulating a grid originating from the satellite or plane, and treating each point as an individual observation and placing these observations onto the grid individually. Data reduction is a key aspect of this process, as multiple observations often end up aligned to a single grid point.
+
+Caspian is a gridder that treats data as a mass of individual observations, and grids this data using a variety of data reduction algorithms. Data is projected into the desired projection and loaded into an index, which takes the form of an adaptive K-D tree; a grid is formed and divided into cells, and each of these cells is filled by querying the index for points that fall into the cell, and then using a data reduction algorithm to derive a single value for that cell.
+
+\section{Input and Output Formats}
+Both inputs and outputs are in the form of flat binary files. Latitudes and longitudes are input and output in 32-bit IEEE float; the format of the data file (input and output) is specified at run time.
+
+\section{Specifying the output grid}
+A variety of parameters are needed to specify the output grid.
+\begin{description}
+\item[Projection Description (\texttt{--projection})] This is a PROJ.4 projection specifier string. See \url{http://www.remotesensing.org/geotiff/proj_list/} for a list of common projections, and how to specify them using a PROJ.4 string.
+\item[Grid Centre (\texttt{--central-x}, \texttt{--central-y})] -- the offset from the projection origin (units of metres), at which the centre of the output grid will be located.
+\item[Horizontal \& Vertical Resolution (\texttt{--hres}, \texttt{--vres})] specify the resolution of the output grid (units of metres).
+\item[Width \& Height (\texttt{--width}, \texttt{--height})] specify the width and height of the output grid, in pixels.
+\end{description}
+
+As an example, imagine a grid centered over the United Kingdom, using a Mercator projection and the WGS84 datum. The bounds of latitude are (47, 63), and of longitude are (-15, 13). It is designed that the latitude of true scale shall be 55.0. The basic PROJ.4 string for this is ``\texttt{+proj=merc +ellps=WGS84 +lat\_ts=55.0 +lon\_0=-15.0}". Horizontal and vertical resolution are arbitrarily set to 1100 metres.
+
+The central grid position and width and height now need to be computed. For convenience, a utility is provided to do this (built under bin/projcalc).
+\begin{verbatim}
+bin/projcalc "+proj=merc +ellps=WGS84 +lat_ts=55.0 +lon_0=-15.0" \
+   63.0 47 -15 13 1100 1100
+Centre: (895917.812500, 4303742.500000)
+Width: 1629, Height: 1647
+\end{verbatim}
+This command has provided the remaining parameters. Note that this command is not applicable in all cases (such as polar stereographic projections); this is why the bounding latitudes and longitudes are not provided directly to Caspian.
+
+\section{Usage}
+Once the projection parameters have been calculated, and the input data is assembled, usage is simple. For this example, the same projection as before has been used, and the data is assumed to be in float32 format.
+\begin{verbatim}
+bin/caspian --input-data data --input-lats latitudes \
+--input-lons longitudes --output-data uk_data \
+--output-lats uk_lats --output-lons uk_lons \
+--projection "+proj=merc +ellps=WGS84 +lat_ts=55.0 +lon_0=-15.0" \
+--width 1629 --height 1647 --hres 1100.0 --vres 1100.0 \
+--central-x 895917.8125 --central-y 4303742.5 --dtype float32
+\end{verbatim}
+
+The output files (uk\_data, uk\_lats, and uk\_lons) will all have the same size (equal to width*height); the uk\_lats and uk\_lons files specify geolocation for the projected data.
+
+\end{document}

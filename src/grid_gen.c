@@ -282,14 +282,26 @@ size_t dtype_sizeof(dtype type) {
 void help(char *prog) {
    printf("Usage: %s <options>\n", basename(prog));
    printf("Options:\n");
+   printf("\t--dtype\t\t\tSpecify dtype for input and output files\n");
+   printf("\n");
+   printf(" Input data\n");
    printf("\t--input-data\t\tSpecify filename for input data\n");
    printf("\t--input-lats\t\tSpecify filename for input latitude\n");
    printf("\t--input-lons\t\tSpecify filename for input longitude\n");
+   printf("\n");
+   printf(" Output data\n");
    printf("\t--output-data\t\tSpecify filename for output data\n");
    printf("\t--output-lats\t\tSpecify filename for output latitude\n");
    printf("\t--output-lons\t\tSpecify filename for output longitude\n");
+   printf("\n");
+   printf(" Output grid parameters\n");
    printf("\t--projection\t\tSpecify projection using PROJ.4 compatible string\n");
-   printf("\t--dtype\t\tSpecify dtype for input and output files\n");
+   printf("\t--height\t\tHeight of output grid\n");
+   printf("\t--width \t\tWidth of output grid\n");
+   printf("\t--vres\t\t\tVertical resolution of output grid, in projection units (metres)\n");
+   printf("\t--hres\t\t\tHorizontal resolution of output grid, in projection units (metres)\n");
+   printf("\t--central-y\t\tVertical position of centre of output grid, in projection units (metres)\n");
+   printf("\t--central-x\t\tHorizontal position of centre of output grid, in projection units (metres)\n");
    printf("\n");
    printf("Valid dtypes are:\n");
    #ifdef ACCEPTED_UINT8
