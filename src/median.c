@@ -1,14 +1,15 @@
 #include "kd_tree.h"
 #include "median.h"
+#include "grid_gen.h"
 
-static int partition(float *values, int first, int last)
+static int partition(NUMERIC_WORKING_TYPE *values, int first, int last)
 {
    if (first == last) return first;
 
-   float V = values[first];
+   NUMERIC_WORKING_TYPE V = values[first];
    register int i = first;
    register int j = last+1;
-   register float swapTemp; //Used for swapping values
+   register NUMERIC_WORKING_TYPE swapTemp; //Used for swapping values
 
    do {
 
@@ -28,7 +29,7 @@ static int partition(float *values, int first, int last)
    return j;
 }
 
-static float evenSelection(float *values, int k, int first, int last)
+static NUMERIC_WORKING_TYPE evenSelection(NUMERIC_WORKING_TYPE *values, int k, int first, int last)
 {
    int j;
 
@@ -41,7 +42,7 @@ static float evenSelection(float *values, int k, int first, int last)
    }
 }
 
-static float oddSelection(float *values, int lenA, int k1, int k2)
+static NUMERIC_WORKING_TYPE oddSelection(NUMERIC_WORKING_TYPE *values, int lenA, int k1, int k2)
 {
    int first = 0;
    int last = lenA-1;
@@ -67,7 +68,7 @@ static float oddSelection(float *values, int lenA, int k1, int k2)
    }
 }
 
-float median(float *values, int lenA)
+NUMERIC_WORKING_TYPE median(NUMERIC_WORKING_TYPE *values, int lenA)
 {
    if (lenA==1) return values[0];
    if (lenA==2) return (values[0] + values[1]) / 2.0;

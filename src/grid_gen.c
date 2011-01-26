@@ -16,34 +16,100 @@
 #include "kd_tree.h"
 #include "median.h"
 
-// Determine if 64bit
-#ifdef INT64_MAX
-#define SIXTYFOURBIT
-#endif
+NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index) {
+   switch (input_dtype.specifier) {
+      case uint8:
+         return (NUMERIC_WORKING_TYPE) ((uint8_t *) data)[index];
+      case uint16:
+         return (NUMERIC_WORKING_TYPE) ((uint16_t *) data)[index];
+      case uint32:
+         return (NUMERIC_WORKING_TYPE) ((uint32_t *) data)[index];
+      #ifdef SIXTYFOURBIT
+      case uint64:
+         return (NUMERIC_WORKING_TYPE) ((uint64_t *) data)[index];
+      #endif
+      case int8:
+         return (NUMERIC_WORKING_TYPE) ((int8_t *) data)[index];
+      case int16:
+         return (NUMERIC_WORKING_TYPE) ((int16_t *) data)[index];
+      case int32:
+         return (NUMERIC_WORKING_TYPE) ((int32_t *) data)[index];
+      #ifdef SIXTYFOURBIT
+      case int64:
+         return (NUMERIC_WORKING_TYPE) ((int64_t *) data)[index];
+      #endif
+      case float32:
+         return (NUMERIC_WORKING_TYPE) ((float32_t *) data)[index];
+      case float64:
+         return (NUMERIC_WORKING_TYPE) ((float64_t *) data)[index];
+      default:
+         fprintf(stderr, "numeric_get received an invalid dtype (%d), quitting.\n", input_dtype.specifier);
+         exit(-1);
+   }
+}
 
-// Define float32_t and float64_t for consistency
-typedef float float32_t;
-typedef double float64_t;
+void coded_get(void *data, dtype input_dtype, int index, void *output) {
+   memcpy(output, &((char *) data)[index*input_dtype.size], input_dtype.size);
+}
 
-// Enumerate the dtypes
-typedef enum dtype_e {uint8, uint16, uint32, uint64, int8, int16, int32, int64, float32, float64, undef} dtype;
+void coded_put(void *data, dtype output_dtype, int index, void *input) {
+   memcpy(&((char *) data)[index*output_dtype.size], input, output_dtype.size);
+}
 
-void reduce(result_set_t *set, char *data, struct reduction_attrs *attrs, float *dimension_bounds, char *data_output, int output_index, dtype user_dtype, size_t user_dtype_size) {
-#ifdef REDUCE_MEAN
-   #define ALLOW_FLOAT
-   register float64_t current_sum = 0.0;
-   register float64_t query_data_value;
+
+void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE data_item) {
+   #define put(type) ((type *) data)[index] = (type) data_item
+   switch (output_dtype.specifier) {
+      case uint8:
+         put(uint8_t);
+         break;
+      case uint16:
+         put(uint16_t);
+         break;
+      case uint32:
+         put(uint32_t);
+         break;
+      #ifdef SIXTYFOURBIT
+      case uint64:
+         put(uint64_t);
+         break;
+      #endif
+      case int8:
+         put(int8_t);
+         break;
+      case int16:
+         put(int16_t);
+         break;
+      case int32:
+         put(int32_t);
+         break;
+      #ifdef SIXTYFOURBIT
+      case int64:
+         put(int64_t);
+         break;
+      #endif
+      case float32:
+         put(float32_t);
+         break;
+      case float64:
+         put(float64_t);
+         break;
+      default:
+         fprintf(stderr, "numeric_put received an invalid dtype (%s), quitting.\n", output_dtype.string);
+         exit(-1);
+   }
+}
+
+void reduce_numeric_mean(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+   register NUMERIC_WORKING_TYPE current_sum = 0.0;
+   register NUMERIC_WORKING_TYPE query_data_value;
    register unsigned int current_number_of_values = 0;
 
    struct result_set_item *current_item;
    result_set_prepare_iteration(set);
 
    while ((current_item = result_set_iterate(set)) != NULL) {
-      if (user_dtype == float32) {
-         query_data_value = ((float32_t *) data)[current_item->record_index];
-      } else {
-         query_data_value = ((float64_t *) data)[current_item->record_index];
-      }
+      query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
       if(query_data_value == attrs->fill_value) {
          continue;
@@ -52,73 +118,85 @@ void reduce(result_set_t *set, char *data, struct reduction_attrs *attrs, float 
       current_number_of_values++;
    }
 
-   float64_t output_value = (current_number_of_values == 0) ? (attrs->fill_value) : (current_sum / (float) current_number_of_values);
+   NUMERIC_WORKING_TYPE output_value = (current_number_of_values == 0) ? (attrs->fill_value) : (current_sum / (NUMERIC_WORKING_TYPE) current_number_of_values);
 
-   if (user_dtype == float32) {
-      ((float32_t *)data_output)[output_index] = (float32_t) output_value;
+
+   numeric_put(output_data, output_dtype, output_index, output_value);
+}
+
+dtype dtype_string_parse(char *dtype_string) {
+   dtype output;
+   int parsed = 0;
+   #define parse(ttyyppee, ssiizzee, ssttyyllee) if(strcmp(#ttyyppee, dtype_string) == 0) { output.specifier = ttyyppee; output.size = ssiizzee; output.type = ssttyyllee; output.string = #ttyyppee; parsed = 1;}
+   parse(uint8, 1, numeric);
+   parse(uint16, 2, numeric);
+   parse(uint32, 4, numeric);
+   parse(uint64, 8, numeric);
+   parse(int8, 1, numeric);
+   parse(int16, 2, numeric);
+   parse(int32, 4, numeric);
+   parse(int64, 8, numeric);
+   parse(float32, 4, numeric);
+   parse(float64, 8, numeric);
+   parse(coded8, 1, coded);
+   parse(coded16, 2, coded);
+   parse(coded32, 4, coded);
+   parse(coded64, 8, coded);
+
+   if (parsed) {
+      return output;
    } else {
-      ((float64_t *)data_output)[output_index] = (float64_t) output_value;
+      fprintf(stderr, "Could not decode dtype '%s'.\n", dtype_string);
+      exit(-1);
    }
-#endif
+}
 
-#ifdef REDUCE_NEAREST_NEIGHBOUR
-   #define ALLOW_ALL
+void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float lowest_distance = FLT_MAX;
-   void *best_value = malloc(user_dtype_size);
-   register float64_t query_data_value;
+   void *best_value = malloc(input_dtype.size);
    register short int value_stored = 0;
 
-   float central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
-   float central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
+   float32_t central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
+   float32_t central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
 
    struct result_set_item *current_item;
    result_set_prepare_iteration(set);
 
    register float current_distance;
    while ((current_item = result_set_iterate(set)) != NULL) {
-      if (user_dtype == float32) {
-         query_data_value = ((float32_t *) data)[current_item->record_index];
-      } else {
-         query_data_value = ((float64_t *) data)[current_item->record_index];
-      }
-      if(query_data_value == attrs->fill_value) {
-         continue;
-      }
       current_distance = powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2);
       if (current_distance < lowest_distance) {
          // We have a new nearest neighbour, replace in the value
-         //printf("%f is better than %f, storing %f\n", current_distance, lowest_distance, ((float *) data)[current_item->record_index]);
          lowest_distance = current_distance;
-         memcpy(best_value, &data[current_item->record_index * user_dtype_size], user_dtype_size);
+         coded_get(input_data, input_dtype, current_item->record_index, best_value);
          value_stored = value_stored || 1;
       }
    }
 
    if (!value_stored) {
-      memcpy(best_value, &attrs->fill_value, 4); // TODO: Fix (fill value is hardcoded float)
+      memset(best_value, 0, input_dtype.size);
    }
 
    // Store the value
-   //printf("Storing %f as value\n", *((float *) best_value));
-   memcpy(&data_output[output_index * user_dtype_size], best_value, user_dtype_size);
+   coded_put(output_data, output_dtype, output_index, best_value);
+
+   // Cleanup
    free(best_value);
-#endif
+}
 
-#ifdef REDUCE_MEDIAN
-   #define ALLOW_FLOAT32
-
+void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    unsigned int maximum_number_results = result_set_len(set); // maximum because some will be fill values
    unsigned int current_number_results = 0;
-   float32_t *values = calloc(sizeof(float32_t), maximum_number_results);
-   register float32_t query_data_value;
+   register NUMERIC_WORKING_TYPE query_data_value;
+
+   NUMERIC_WORKING_TYPE *values = calloc(sizeof(NUMERIC_WORKING_TYPE), maximum_number_results);
    if (values == NULL) { exit(1); }
 
    struct result_set_item *current_item;
    result_set_prepare_iteration(set);
 
-   register float current_distance;
    while ((current_item = result_set_iterate(set)) != NULL) {
-      query_data_value = ((float32_t *) data)[current_item->record_index];
+      query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
       if(query_data_value == attrs->fill_value) {
          continue;
       }
@@ -127,31 +205,24 @@ void reduce(result_set_t *set, char *data, struct reduction_attrs *attrs, float 
    }
 
    // Now get the median
-   ((float32_t *) data_output)[output_index] = (current_number_results == 0) ? attrs->fill_value : median(values, current_number_results);
+   numeric_put(output_data, output_dtype, output_index, (current_number_results == 0) ? attrs->fill_value : median(values, current_number_results));
 
    // Free our working array of floats
    free(values);
-#endif
+}
 
-#ifdef REDUCE_WEIGHTED_MEAN
-   #define ALLOW_FLOAT
-   register float64_t current_sum = 0.0;
-   register float64_t total_distance = 0.0;
-   register float64_t query_data_value;
-   register float current_distance; //Initialized on each loop
+void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+   register NUMERIC_WORKING_TYPE current_sum = 0.0, total_distance = 0.0;
+   register NUMERIC_WORKING_TYPE query_data_value, current_distance; //Initialized on each loop
 
-   float central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
-   float central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
+   NUMERIC_WORKING_TYPE central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
+   NUMERIC_WORKING_TYPE central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
 
    struct result_set_item *current_item;
    result_set_prepare_iteration(set);
 
    while ((current_item = result_set_iterate(set)) != NULL) {
-      if (user_dtype == float32) {
-         query_data_value = ((float32_t *) data)[current_item->record_index];
-      } else {
-         query_data_value = ((float64_t *) data)[current_item->record_index];
-      }
+      query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
       if(query_data_value == attrs->fill_value) {
          continue;
@@ -161,136 +232,21 @@ void reduce(result_set_t *set, char *data, struct reduction_attrs *attrs, float 
       total_distance += current_distance;
    }
 
-   float64_t output_value = (total_distance == 0.0) ? attrs->fill_value : current_sum / total_distance;
-
-   if (user_dtype == float32) {
-      ((float32_t *)data_output)[output_index] = (float32_t) output_value;
-   } else {
-      ((float64_t *)data_output)[output_index] = (float64_t) output_value;
-   }
-
-#endif
+   numeric_put(output_data, output_dtype, output_index, (total_distance == 0.0) ? attrs->fill_value : current_sum / total_distance);
 }
-
-// Crazy preprecessor hacks: figure out a plain list of what types are allowed
-// For signed ints
-#if defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_SIGNEDINT) || defined(ALLOW_INT8)
-#define ACCEPTED_INT8
-#endif
-#if defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_SIGNEDINT) || defined(ALLOW_INT16)
-#define ACCEPTED_INT16
-#endif
-#if defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_SIGNEDINT) || defined(ALLOW_INT32)
-#define ACCEPTED_INT32
-#endif
-#if defined(SIXTYFOURBIT) && (defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_SIGNEDINT) || defined(ALLOW_INT64))
-#define ACCEPTED_INT64
-#endif
-
-// For unsigned ints
-#if defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_UNSIGNEDINT) || defined(ALLOW_UINT8)
-#define ACCEPTED_UINT8
-#endif
-#if defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_UNSIGNEDINT) || defined(ALLOW_UINT16)
-#define ACCEPTED_UINT16
-#endif
-#if defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_UNSIGNEDINT) || defined(ALLOW_UINT32)
-#define ACCEPTED_UINT32
-#endif
-#if defined(SIXTYFOURBIT) && (defined(ALLOW_ALL) || defined(ALLOW_INT) || defined(ALLOW_UNSIGNEDINT) || defined(ALLOW_UINT64))
-#define ACCEPTED_UINT64
-#endif
-
-// And for floats
-#if defined(ALLOW_ALL) || defined(ALLOW_FLOAT) || defined(ALLOW_FLOAT32)
-#define ACCEPTED_FLOAT32
-#endif
-#if defined(ALLOW_ALL) || defined(ALLOW_FLOAT) || defined(ALLOW_FLOAT64)
-#define ACCEPTED_FLOAT64
-#endif
-
-
-
-dtype dtype_string_parse(char *dtype_string) {
-   #define allow(x) if (strcmp(#x, dtype_string) == 0) return x
-
-   #ifdef ACCEPTED_UINT8
-   allow(uint8);
-   #endif
-
-   #ifdef ACCEPTED_UINT16
-   allow(uint16);
-   #endif
-
-   #ifdef ACCEPTED_UINT32
-   allow(uint32);
-   #endif
-
-   #ifdef ACCEPTED_UINT64
-   allow(uint64);
-   #endif
-
-   #ifdef ACCEPTED_INT8
-   allow(int8);
-   #endif
-
-   #ifdef ACCEPTED_INT16
-   allow(int16);
-   #endif
-
-   #ifdef ACCEPTED_INT32
-   allow(int32);
-   #endif
-
-   #ifdef ACCEPTED_INT64
-   allow(int64);
-   #endif
-
-   #ifdef ACCEPTED_FLOAT32
-   allow(float32);
-   #endif
-
-   #ifdef ACCEPTED_FLOAT64
-   allow(float64);
-   #endif
-
-   return undef;
-}
-
-size_t dtype_sizeof(dtype type) {
-   switch (type) {
-      case uint8:
-      case int8:
-         return 1;
-      case uint16:
-      case int16:
-         return 2;
-      case uint32:
-      case int32:
-      case float32:
-         return 4;
-      case uint64:
-      case int64:
-      case float64:
-         return 8;
-      default:
-         return 0;
-   }
-}
-
 
 void help(char *prog) {
    printf("Usage: %s <options>\n", basename(prog));
    printf("Options:\n");
-   printf("\t--dtype\t\t\tSpecify dtype for input and output files\n");
-   printf("\n");
    printf(" Input data\n");
    printf("\t--input-data\t\tSpecify filename for input data\n");
+   printf("\t--input-dtype\t\tSpecify dtype for input data file\n");
    printf("\t--input-lats\t\tSpecify filename for input latitude\n");
    printf("\t--input-lons\t\tSpecify filename for input longitude\n");
    printf("\n");
    printf(" Output data\n");
    printf("\t--output-data\t\tSpecify filename for output data\n");
+   printf("\t--output-dtype\t\tSpecify dtype for output data file\n");
    printf("\t--output-lats\t\tSpecify filename for output latitude\n");
    printf("\t--output-lons\t\tSpecify filename for output longitude\n");
    printf("\n");
@@ -303,37 +259,27 @@ void help(char *prog) {
    printf("\t--central-y\t\tVertical position of centre of output grid, in projection units (metres)\n");
    printf("\t--central-x\t\tHorizontal position of centre of output grid, in projection units (metres)\n");
    printf("\n");
-   printf("Valid dtypes are:\n");
-   #ifdef ACCEPTED_UINT8
+   printf("Valid dtypes for numeric functions are:\n");
    printf("uint8\n");
-   #endif
-   #ifdef ACCEPTED_UINT16
    printf("uint16\n");
-   #endif
-   #ifdef ACCEPTED_UINT32
    printf("uint32\n");
-   #endif
-   #ifdef ACCEPTED_UINT64
+   #ifdef SIXTYFOURBIT
    printf("uint64\n");
    #endif
-   #ifdef ACCEPTED_INT8
    printf("int8\n");
-   #endif
-   #ifdef ACCEPTED_INT16
    printf("int16\n");
-   #endif
-   #ifdef ACCEPTED_INT32
    printf("int32\n");
-   #endif
-   #ifdef ACCEPTED_INT64
+   #ifdef SIXTYFOURBIT
    printf("int64\n");
    #endif
-   #ifdef ACCEPTED_FLOAT32
    printf("float32\n");
-   #endif
-   #ifdef ACCEPTED_FLOAT64
    printf("float64\n");
-   #endif
+   printf("\n");
+   printf("Valid dtypes for coded functions are:\n");
+   printf("coded8\n");
+   printf("coded16\n");
+   printf("coded32\n");
+   printf("coded64\n");
 }
 
 int main(int argc, char **argv) {
@@ -344,13 +290,20 @@ int main(int argc, char **argv) {
    int width = 0, height = 0;
    double horizontal_resolution = 0.0, vertical_resolution = 0.0;
    double central_x = 0.0, central_y = 0.0;
-   dtype user_dtype;
-   size_t user_dtype_size;
+   dtype input_dtype = {undef_type, 0, undef_style, "undef"}, output_dtype = {undef_type, 0, undef_style, "undef"};
+   int selected_mapping_function_index = -1;
 
    // Paranoid dtype checks
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {
       printf("Unsupported system: 'float' and 'double' not 4 and 8 bytes respectively\n");
    }
+
+   mapping_function reduction_functions[] = {
+      {"mean", numeric, &reduce_numeric_mean},
+      {"weighted_mean", numeric, &reduce_numeric_weighted_mean},
+      {"median", numeric, &reduce_numeric_median},
+      {"nearest_neighbour", coded, &reduce_coded_nearest_neighbour}
+   };
 
    int curarg, option_index = 0;
    // Parse command line arguments
@@ -361,18 +314,33 @@ int main(int argc, char **argv) {
       {"output-data", 1, 0, 'D'},
       {"output-lats", 1, 0, 'A'},
       {"output-lons", 1, 0, 'O'},
+      {"mapping-function", 1, 0, 'm'},
       {"projection", 1, 0, 'p'},
       {"width", 1, 0, 'w'},
       {"height", 1, 0, 'h'},
       {"hres", 1, 0, 'H'},
       {"vres", 1, 0, 'V'},
-      {"dtype", 1, 0, 't'},
+      {"input-dtype", 1, 0, 't'},
+      {"output-dtype", 1, 0, 'T'},
       {"central-x", 1, 0, 'x'},
       {"central-y", 1, 0, 'y'},
    };
 
    while((curarg = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
       switch (curarg) {
+         case 'm': // Mapping function
+            // Get the appropriate mapping function struct
+            for (int i=0; i<4; i++) { // TODO FIX HARDCODEDNESS!
+               if (strcmp(reduction_functions[i].name, optarg) == 0) {
+                  selected_mapping_function_index = i;
+                  break;
+               }
+            }
+            if (selected_mapping_function_index == -1) {
+               fprintf(stderr, "Unknown mapping function '%s'\n", optarg);
+               exit(-1);
+            }
+            break;
          case 'p':
             projection_string = calloc(strlen(optarg), sizeof(char));
             strcpy(projection_string, optarg);
@@ -420,13 +388,10 @@ int main(int argc, char **argv) {
             central_y = atof(optarg);
             break;
          case 't':
-            user_dtype = dtype_string_parse(optarg);
-            if (user_dtype == undef) {
-               printf("Invalid input dtype\n");
-               help(argv[0]);
-               return -1;
-            }
-            user_dtype_size = dtype_sizeof(user_dtype);
+            input_dtype = dtype_string_parse(optarg);
+            break;
+         case 'T':
+            output_dtype = dtype_string_parse(optarg);
             break;
          default:
             printf("Unrecognised option\n");
@@ -447,7 +412,10 @@ int main(int argc, char **argv) {
       width == 0 ||
       height == 0 ||
       horizontal_resolution == 0.0 ||
-      vertical_resolution == 0.0
+      vertical_resolution == 0.0 ||
+      input_dtype.type == undef_type ||
+      output_dtype.type == undef_type ||
+      selected_mapping_function_index == -1
    ) {
       printf("Not all required options supplied\n");
       help(argv[0]);
@@ -468,10 +436,21 @@ int main(int argc, char **argv) {
    printf("Central X/Y: ");
    #endif
 
+   // Validate coded/non-coded functions/data types
+   mapping_function reduction_function = reduction_functions[selected_mapping_function_index];
+   if (reduction_function.type == coded) {
+      // Input and output dtype must be the same and coded
+      if (input_dtype.type != coded || output_dtype.type != coded || !dtype_equal(input_dtype, output_dtype)) {
+         fprintf(stderr, "When using a coded mapping function, input and output dtype must be the same, and of coded type\n");
+      }
+   } else if (reduction_function.type == numeric) {
+      if (input_dtype.type != numeric || output_dtype.type != numeric) {
+         fprintf(stderr, "When using a numeric mapping function, input and output dtype must be numeric\n");
+      }
+   }
+
    struct tree *root_p;
    int result;
-
-   // Figure out bytes per record (input & output)
 
    // Reduction options
    struct reduction_attrs r_attrs;
@@ -491,53 +470,54 @@ int main(int argc, char **argv) {
       return -1;
    }
 
-   unsigned int data_number_bytes = latlon_reader_get_num_records(reader) * user_dtype_size;
+   unsigned int input_data_number_bytes = latlon_reader_get_num_records(reader) * input_dtype.size;
+   unsigned int output_data_number_bytes = width * height * output_dtype.size;
+   unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
 
-   printf("Mapping %d bytes of input data into memory\n", data_number_bytes);
+   printf("Mapping %d bytes of input data into memory\n", input_data_number_bytes);
    int data_fd = open(input_data_filename, O_RDONLY);
    if (data_fd == -1) {
       printf("Failed to open input data file %s\n", input_data_filename);
       return -1;
    }
-   char *data = mmap(0, data_number_bytes, PROT_READ, MAP_SHARED, data_fd, 0);
+   char *data = mmap(0, input_data_number_bytes, PROT_READ, MAP_SHARED, data_fd, 0);
    if (data == MAP_FAILED) {
       printf("Failed to map data into memory (%s)\n", strerror(errno));
       return -1;
    }
-   //madvise(data, data_number_bytes, MADV_WILLNEED | MADV_SEQUENTIAL);
 
    printf("Creating output files\n");
    mode_t creation_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
    int output_open_flags = O_CREAT | O_TRUNC | O_RDWR;
 
    int data_output_fd = open(output_data_filename, output_open_flags, creation_mode);
-   if(posix_fallocate(data_output_fd, 0, user_dtype_size * width * height) != 0) {
+   if(posix_fallocate(data_output_fd, 0, output_data_number_bytes) != 0) {
       printf("Failed to allocate space in file system\n");
       return -1;
    }
-   char *data_output = mmap(0, width * height * user_dtype_size, PROT_WRITE, MAP_SHARED, data_output_fd, 0);
+   char *data_output = mmap(0, output_data_number_bytes, PROT_WRITE, MAP_SHARED, data_output_fd, 0);
    if (data_output == MAP_FAILED) {
       printf("Failed to map output data into memory (%s)\n", strerror(errno));
       return -1;
    }
 
    int lats_output_fd = open(output_lat_filename, output_open_flags, creation_mode);
-   if(posix_fallocate(lats_output_fd, 0, sizeof(float) * width * height) != 0) {
+   if(posix_fallocate(lats_output_fd, 0, output_geo_number_bytes) != 0) {
       printf("Failed to allocate space in file system\n");
       return -1;
    }
-   float *lats_output = mmap(0, width * height * sizeof(float), PROT_WRITE, MAP_SHARED, lats_output_fd, 0);
+   float *lats_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lats_output_fd, 0);
    if (lats_output == MAP_FAILED) {
       printf("Failed to map output lats file into memory (%s)\n", strerror(errno));
       return -1;
    }
 
    int lons_output_fd = open(output_lon_filename, output_open_flags, creation_mode);
-   if(posix_fallocate(lons_output_fd, 0, sizeof(float) * width * height) != 0) {
+   if(posix_fallocate(lons_output_fd, 0, output_geo_number_bytes) != 0) {
       printf("Failed to allocate space in file system\n");
       return -1;
    }
-   float *lons_output = mmap(0, width * height * sizeof(float), PROT_WRITE, MAP_SHARED, lons_output_fd, 0);
+   float *lons_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lons_output_fd, 0);
    if (lons_output == MAP_FAILED) {
       printf("Failed to map output lons file into memory (%s)\n", strerror(errno));
       return -1;
@@ -564,23 +544,23 @@ int main(int argc, char **argv) {
    printf("Building output image\n");
    start_time = time(NULL);
 
-   float x_0 = central_x - (((float) width / 2.0) * horizontal_resolution);
-   float y_0 = central_y - (((float) height / 2.0) * vertical_resolution);
+   float32_t x_0 = central_x - (((float) width / 2.0) * horizontal_resolution);
+   float32_t y_0 = central_y - (((float) height / 2.0) * vertical_resolution);
 
    for (int v=0; v<height; v++) {
       for (int u=0; u<width; u++) {
          int index = (height-v-1)*width + u;
 
-         float bl_x = x_0 + ((((float) u) - 2.0) * horizontal_resolution);
-         float bl_y = y_0 + ((((float) v) - 2.0) * vertical_resolution);
+         float32_t bl_x = x_0 + ((((float) u) - 2.0) * horizontal_resolution);
+         float32_t bl_y = y_0 + ((((float) v) - 2.0) * vertical_resolution);
 
-         float tr_x = bl_x + (4.0 * horizontal_resolution);
-         float tr_y = bl_y + (4.0 * vertical_resolution);
+         float32_t tr_x = bl_x + (4.0 * horizontal_resolution);
+         float32_t tr_y = bl_y + (4.0 * vertical_resolution);
 
-         float query_dimensions[4] = {bl_x, tr_x, bl_y, tr_y};
+         float32_t query_dimensions[4] = {bl_x, tr_x, bl_y, tr_y};
 
          result_set_t *current_result_set = query_tree(root_p, query_dimensions);
-         reduce(current_result_set, data, &r_attrs, query_dimensions, data_output, index, user_dtype, user_dtype_size);
+         reduction_function.call(current_result_set, &r_attrs, query_dimensions, data, data_output, index, input_dtype, output_dtype);
          result_set_free(current_result_set);
 
          // Get the central latitude and longitude for this cell, and store
@@ -601,10 +581,10 @@ int main(int argc, char **argv) {
    printf("Building image took %d seconds\n", (int) (end_time - start_time));
 
    // Unmap all files
-   munmap(data, data_number_bytes);
-   munmap(data_output, data_number_bytes);
-   munmap(lats_output, data_number_bytes);
-   munmap(lons_output, data_number_bytes);
+   munmap(data, input_data_number_bytes);
+   munmap(data_output, output_data_number_bytes);
+   munmap(lats_output, output_geo_number_bytes);
+   munmap(lons_output, output_geo_number_bytes);
 
    // Close all files
    close(data_fd);
