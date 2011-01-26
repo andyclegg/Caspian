@@ -3,7 +3,7 @@ LDFLAGS=-lm -lproj
 CFLAGS=-std=c99 -Wall
 DFLAGS=-DREDUCE_MEDIAN
 
-all: caspian debug docs projcalc
+all: caspian debug docs projcalc quickview
 
 projcalc: src/projection_calculator.c
 	gcc $(CFLAGS) $(LDFLAGS) $? -o bin/projcalc
@@ -22,5 +22,5 @@ quickview: src/quickview
 	cp src/quickview bin/quickview
 
 clean:
-	rm -f bin/* doc/*
+	rm -rf bin/* doc/*
 	latexmk -c src/doc/caspian.tex

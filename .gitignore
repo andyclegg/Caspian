@@ -1,5 +1,2 @@
-lats
-lons
-*output_file
-proto
-src/*.gch
+bin/*
+doc/*
