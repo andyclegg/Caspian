@@ -2,6 +2,7 @@
 #define HEADER_GRID_GEN
 
 #include "result_set.h"
+#include <stdint.h>
 
 // Define float32_t and float64_t for consistency
 typedef float float32_t;
@@ -31,8 +32,10 @@ typedef struct dtype_s {
 #define NUMERIC_WORKING_TYPE float32_t
 #endif
 
+
 struct reduction_attrs {
-   NUMERIC_WORKING_TYPE fill_value;
+   NUMERIC_WORKING_TYPE input_fill_value;
+   NUMERIC_WORKING_TYPE output_fill_value;
 };
 
 

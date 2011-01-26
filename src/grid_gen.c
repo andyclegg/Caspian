@@ -111,14 +111,14 @@ void reduce_numeric_mean(result_set_t *set, struct reduction_attrs *attrs, float
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
-      if(query_data_value == attrs->fill_value) {
+      if(query_data_value == attrs->input_fill_value) {
          continue;
       }
       current_sum += query_data_value;
       current_number_of_values++;
    }
 
-   NUMERIC_WORKING_TYPE output_value = (current_number_of_values == 0) ? (attrs->fill_value) : (current_sum / (NUMERIC_WORKING_TYPE) current_number_of_values);
+   NUMERIC_WORKING_TYPE output_value = (current_number_of_values == 0) ? (attrs->output_fill_value) : (current_sum / (NUMERIC_WORKING_TYPE) current_number_of_values);
 
 
    numeric_put(output_data, output_dtype, output_index, output_value);
@@ -197,15 +197,15 @@ void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, flo
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
-      if(query_data_value == attrs->fill_value) {
+      if(query_data_value == attrs->input_fill_value) {
          continue;
       }
-      values[current_number_results] = query_data_value;
-      current_number_results++;
+      values[current_number_results++] = query_data_value;
    }
 
    // Now get the median
-   numeric_put(output_data, output_dtype, output_index, (current_number_results == 0) ? attrs->fill_value : median(values, current_number_results));
+   NUMERIC_WORKING_TYPE output_value = (current_number_results == 0) ? attrs->output_fill_value : median(values, current_number_results);
+   numeric_put(output_data, output_dtype, output_index, output_value);
 
    // Free our working array of floats
    free(values);
@@ -224,7 +224,7 @@ void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *att
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
-      if(query_data_value == attrs->fill_value) {
+      if(query_data_value == attrs->input_fill_value) {
          continue;
       }
       current_distance = powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2);
@@ -232,7 +232,7 @@ void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *att
       total_distance += current_distance;
    }
 
-   numeric_put(output_data, output_dtype, output_index, (total_distance == 0.0) ? attrs->fill_value : current_sum / total_distance);
+   numeric_put(output_data, output_dtype, output_index, (total_distance == 0.0) ? attrs->output_fill_value : current_sum / total_distance);
 }
 
 void help(char *prog) {
@@ -241,12 +241,14 @@ void help(char *prog) {
    printf(" Input data\n");
    printf("\t--input-data\t\tSpecify filename for input data\n");
    printf("\t--input-dtype\t\tSpecify dtype for input data file\n");
+   printf("\t--input-fill-value\tSpecify fill value for input data file\n");
    printf("\t--input-lats\t\tSpecify filename for input latitude\n");
    printf("\t--input-lons\t\tSpecify filename for input longitude\n");
    printf("\n");
    printf(" Output data\n");
    printf("\t--output-data\t\tSpecify filename for output data\n");
    printf("\t--output-dtype\t\tSpecify dtype for output data file\n");
+   printf("\t--output-fill-value\tSpecify fill value for output data file\n");
    printf("\t--output-lats\t\tSpecify filename for output latitude\n");
    printf("\t--output-lons\t\tSpecify filename for output longitude\n");
    printf("\n");
@@ -292,6 +294,7 @@ int main(int argc, char **argv) {
    double central_x = 0.0, central_y = 0.0;
    dtype input_dtype = {undef_type, 0, undef_style, "undef"}, output_dtype = {undef_type, 0, undef_style, "undef"};
    int selected_mapping_function_index = -1;
+   NUMERIC_WORKING_TYPE input_fill_value = 0.0, output_fill_value = 0.0;
 
    // Paranoid dtype checks
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {
@@ -322,6 +325,8 @@ int main(int argc, char **argv) {
       {"vres", 1, 0, 'V'},
       {"input-dtype", 1, 0, 't'},
       {"output-dtype", 1, 0, 'T'},
+      {"input-fill-value", 1, 0, 'f'},
+      {"output-fill-value", 1, 0, 'F'},
       {"central-x", 1, 0, 'x'},
       {"central-y", 1, 0, 'y'},
    };
@@ -393,6 +398,12 @@ int main(int argc, char **argv) {
          case 'T':
             output_dtype = dtype_string_parse(optarg);
             break;
+         case 'f':
+            input_fill_value = atof(optarg);
+            break;
+         case 'F':
+            output_fill_value = atof(optarg);
+            break;
          default:
             printf("Unrecognised option\n");
             help(argv[0]);
@@ -454,12 +465,13 @@ int main(int argc, char **argv) {
 
    // Reduction options
    struct reduction_attrs r_attrs;
-   r_attrs.fill_value = -999.0;
+   r_attrs.input_fill_value = input_fill_value;
+   r_attrs.output_fill_value = output_fill_value;
 
    // Initialize the projection
    projPJ *projection = pj_init_plus(projection_string);
    if (projection == NULL) {
-      printf("Critical: Couldn't initialize projection\n"); //TODO: Stderr
+      fprintf(stderr, "Critical: Couldn't initialize projection\n");
       return -1;
    }
 

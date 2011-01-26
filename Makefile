@@ -22,4 +22,4 @@ quickview: src/quickview
 
 clean:
 	rm -rf bin/* doc/*
-	latexmk -c src/doc/caspian.tex
+	latexmk src/doc/caspian.tex -C -cd
