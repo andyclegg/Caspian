@@ -12,7 +12,7 @@ caspian: $(SOURCE_FILES)
 	gcc $(CFLAGS) $(LDFLAGS) $(SOURCE_FILES) $(DFLAGS) -O3 -mtune=native -o bin/caspian
 
 debug: $(SOURCE_FILES)
-	gcc $(CFLAGS) $(LDFLAGS) $(SOURCE_FILES) $(DFLAGS) -DDEBUG -ggdb -o bin/debug
+	gcc $(CFLAGS) $(LDFLAGS) $(SOURCE_FILES) $(DFLAGS) -DDEBUG -ggdb -o bin/caspian-debug
 
 docs: src/doc/caspian.tex
 	latexmk -cd $? -pdfdvi
