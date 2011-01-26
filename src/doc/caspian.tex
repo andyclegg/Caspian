@@ -28,6 +28,8 @@ Caspian is a gridder that treats data as a mass of individual observations, and 
 \section{Input and Output Formats}
 Both inputs and outputs are in the form of flat binary files. Latitudes and longitudes are input and output in 32-bit IEEE float; the format of the data file (input and output) is specified at run time.
 
+There are 2 modes that decide how the data is interpreted, and what mapping functions can be used. These modes are numeric, and coded. Coded mode is for data that cannot be handled as a number (numeric); some sort of binary data (such as flags) stored in a grid. When handling data of this type, the size of each item of data is specified (\textit{coded8}, \textit{coded16}, \textit{coded32}...), and the contents of the data are never modified.
+
 \section{Specifying the output grid}
 A variety of parameters are needed to specify the output grid.
 \begin{description}
@@ -56,7 +58,9 @@ bin/caspian --input-data data --input-lats latitudes \
 --output-lats uk_lats --output-lons uk_lons \
 --projection "+proj=merc +ellps=WGS84 +lat_ts=55.0 +lon_0=-15.0" \
 --width 1629 --height 1647 --hres 1100.0 --vres 1100.0 \
---central-x 895917.8125 --central-y 4303742.5 --dtype float32
+--central-x 895917.8125 --central-y 4303742.5 \
+--input-dtype float32 --output-dtype float32
+--mapping-function median
 \end{verbatim}
 
 The output files (uk\_data, uk\_lats, and uk\_lons) will all have the same size (equal to width*height); the uk\_lats and uk\_lons files specify geolocation for the projected data.
