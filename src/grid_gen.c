@@ -260,6 +260,8 @@ void help(char *prog) {
    printf("\t--hres\t\t\tHorizontal resolution of output grid, in projection units (metres)\n");
    printf("\t--central-y\t\tVertical position of centre of output grid, in projection units (metres)\n");
    printf("\t--central-x\t\tHorizontal position of centre of output grid, in projection units (metres)\n");
+   printf("\t--vsample\t\tVertical sampling resolution (default is equal to vertical resolution)\n");
+   printf("\t--hsample\t\tHorizontal sampling resolution (default is equal to vertical resolution)\n");
    printf("\n");
    printf("Valid dtypes for numeric functions are:\n");
    printf("uint8\n");
@@ -291,6 +293,7 @@ int main(int argc, char **argv) {
    char *projection_string = NULL;
    int width = 0, height = 0;
    double horizontal_resolution = 0.0, vertical_resolution = 0.0;
+   double horizontal_sampling = 0.0, vertical_sampling = 0.0;
    double central_x = 0.0, central_y = 0.0;
    dtype input_dtype = {undef_type, 0, undef_style, "undef"}, output_dtype = {undef_type, 0, undef_style, "undef"};
    int selected_mapping_function_index = -1;
@@ -329,6 +332,8 @@ int main(int argc, char **argv) {
       {"output-fill-value", 1, 0, 'F'},
       {"central-x", 1, 0, 'x'},
       {"central-y", 1, 0, 'y'},
+      {"hsample", 1, 0, 's'},
+      {"vsample", 1, 0, 'S'},
    };
 
    while((curarg = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
@@ -404,6 +409,12 @@ int main(int argc, char **argv) {
          case 'F':
             output_fill_value = atof(optarg);
             break;
+         case 's':
+            horizontal_sampling = atof(optarg);
+            break;
+         case 'S':
+            vertical_sampling = atof(optarg);
+            break;
          default:
             printf("Unrecognised option\n");
             help(argv[0]);
@@ -458,6 +469,19 @@ int main(int argc, char **argv) {
       if (input_dtype.type != numeric || output_dtype.type != numeric) {
          fprintf(stderr, "When using a numeric mapping function, input and output dtype must be numeric\n");
       }
+   }
+
+   // Set sampling factor offset to be equal to resolution/2 if not set, otherwise to provided value/2
+   float horizontal_sampling_offset, vertical_sampling_offset;
+   if (horizontal_sampling == 0.0) {
+      horizontal_sampling_offset = horizontal_resolution / 2.0;
+   } else {
+      horizontal_sampling_offset = horizontal_sampling / 2.0;
+   }
+   if (vertical_sampling == 0.0) {
+      vertical_sampling_offset = vertical_resolution / 2.0;
+   } else {
+      vertical_sampling_offset = vertical_sampling / 2.0;
    }
 
    struct tree *root_p;
@@ -563,11 +587,14 @@ int main(int argc, char **argv) {
       for (int u=0; u<width; u++) {
          int index = (height-v-1)*width + u;
 
-         float32_t bl_x = x_0 + ((((float) u) - 2.0) * horizontal_resolution);
-         float32_t bl_y = y_0 + ((((float) v) - 2.0) * vertical_resolution);
+         float32_t cr_x = x_0 + ((float) u + 0.5) * horizontal_resolution;
+         float32_t cr_y = y_0 + ((float) v + 0.5) * vertical_resolution;
 
-         float32_t tr_x = bl_x + (4.0 * horizontal_resolution);
-         float32_t tr_y = bl_y + (4.0 * vertical_resolution);
+         float32_t bl_x = cr_x - horizontal_sampling_offset;
+         float32_t bl_y = cr_y - vertical_sampling_offset;
+
+         float32_t tr_x = cr_x + horizontal_sampling_offset;
+         float32_t tr_y = cr_y + vertical_sampling_offset;
 
          float32_t query_dimensions[4] = {bl_x, tr_x, bl_y, tr_y};
 
