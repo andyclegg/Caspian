@@ -227,7 +227,7 @@ void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *att
       if(query_data_value == attrs->input_fill_value) {
          continue;
       }
-      current_distance = powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2);
+      current_distance = sqrt(powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2));
       current_sum += query_data_value * current_distance;
       total_distance += current_distance;
    }
