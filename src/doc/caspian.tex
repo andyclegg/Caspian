@@ -50,8 +50,29 @@ Width: 1629, Height: 1647
 \end{verbatim}
 This command has provided the remaining parameters. Note that this command is not applicable in all cases (such as polar stereographic projections); this is why the bounding latitudes and longitudes are not provided directly to Caspian.
 
+\section{Controlling mapping}
+The main controls over mapping are in the selection of the mapping function, and in the selection of the sampling rates.
+\begin{figure}
+\centering
+\includegraphics{resolution_and_sampling.eps}
+\caption{Diagram showing the difference between resolution and sampling rate}
+\label{fig:res_and_sampling}
+\end{figure}
+\subsection{Sampling Rate}
+While the horizontal and vertical resolution define the distance between pixel centres, the sampling rate defines the size of the search box which is used to gather data for that pixel (see Figure~\ref{fig:res_and_sampling}). The simplest case is when the sampling rate is equal to the resolution; in this case the box is equal to the pixel itself. However, to avoid gaps in the output image, it may be necessary to expand the search box outside the bounds of the pixel, in which case the sampling rate may be increased.
+
+\subsection{Mapping Function}
+There are currently four mapping functions; three of which can be used with numerical data and one of which can be used for coded data.
+\begin{description}
+\item[Mean] -- a simple mean of all selected points.
+\item[Weighted Mean] -- a mean of all selected points, weighted by distance. The distance is the euclidean distance between the selected point and the centre of the pixel (in metres).
+\item[Median] -- the value of the pixel is the median value of all selected points, regardless of their distance from the centre of the pixel.
+\item[Nearest Neighbour (Coded)] -- the value of the pixel is the value of the nearest point to the centre.
+\end{description}
+
+
 \section{Usage}
-Once the projection parameters have been calculated, and the input data is assembled, usage is simple. For this example, the same projection as before has been used, and the data is assumed to be in float32 format.
+Once the projection parameters have been calculated, and the input data is assembled, usage is simple. For this example, the same projection as before has been used, and the data is assumed to be in float32 format. Sampling rates are set to 3x the resolution.
 \begin{verbatim}
 bin/caspian --input-data data --input-lats latitudes \
 --input-lons longitudes --output-data uk_data \
@@ -59,7 +80,8 @@ bin/caspian --input-data data --input-lats latitudes \
 --projection "+proj=merc +ellps=WGS84 +lat_ts=55.0 +lon_0=-15.0" \
 --width 1629 --height 1647 --hres 1100.0 --vres 1100.0 \
 --central-x 895917.8125 --central-y 4303742.5 \
---input-dtype float32 --output-dtype float32
+--input-dtype float32 --output-dtype float32 \
+--hsample 3300.0 --vsample 3300.0
 --mapping-function median
 \end{verbatim}
 
