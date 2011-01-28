@@ -276,8 +276,8 @@ static int recursive_build_kd_tree(struct tree *tree_p,unsigned int first_elemen
    } else {
       float lat_min = FLT_MAX;
       float lon_min = FLT_MAX;
-      float lat_max = FLT_MIN;
-      float lon_max = FLT_MIN;
+      float lat_max = -FLT_MAX;
+      float lon_max = -FLT_MAX;
       for (int current_index = first_element; current_index <= last_element; current_index++) {
          lat_min = fmin(lat_min, observations[current_index].dimensions[Y]);
          lon_min = fmin(lon_min, observations[current_index].dimensions[X]);
