@@ -119,33 +119,6 @@ void reduce_numeric_mean(result_set_t *set, struct reduction_attrs *attrs, float
    numeric_put(output_data, output_dtype, output_index, output_value);
 }
 
-dtype dtype_string_parse(char *dtype_string) {
-   dtype output;
-   int parsed = 0;
-   #define parse(ttyyppee, ssiizzee, ssttyyllee) if(strcmp(#ttyyppee, dtype_string) == 0) { output.specifier = ttyyppee; output.size = ssiizzee; output.type = ssttyyllee; output.string = #ttyyppee; parsed = 1;}
-   parse(uint8, 1, numeric);
-   parse(uint16, 2, numeric);
-   parse(uint32, 4, numeric);
-   parse(uint64, 8, numeric);
-   parse(int8, 1, numeric);
-   parse(int16, 2, numeric);
-   parse(int32, 4, numeric);
-   parse(int64, 8, numeric);
-   parse(float32, 4, numeric);
-   parse(float64, 8, numeric);
-   parse(coded8, 1, coded);
-   parse(coded16, 2, coded);
-   parse(coded32, 4, coded);
-   parse(coded64, 8, coded);
-
-   if (parsed) {
-      return output;
-   } else {
-      fprintf(stderr, "Could not decode dtype '%s'.\n", dtype_string);
-      exit(-1);
-   }
-}
-
 void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float lowest_distance = FLT_MAX;
    void *best_value = malloc(input_dtype.size);
