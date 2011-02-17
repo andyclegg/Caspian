@@ -16,8 +16,6 @@
 #define PARENT(index) (((index+1)/2) - 1)
 #define SQUARED(x) ((x)*(x))
 
-#define FORKDEPTH 2
-
 #define KDTREE_FILE_FORMAT 1
 
 void save_to_file(struct tree *tree_p, FILE *output_file) {
@@ -398,8 +396,13 @@ static int recursive_build_kd_tree(struct tree *tree_p,unsigned int first_elemen
       current_element->data.discriminator = discriminator;
 
       //Recurse
-      recursive_build_kd_tree(tree_p, first_element, end_left, LEFT_CHILD(current_tree_index), d_type);
-      recursive_build_kd_tree(tree_p, start_right, last_element, RIGHT_CHILD(current_tree_index), d_type);
+      #pragma omp parallel sections num_threads(2)
+      {
+         #pragma omp section
+         recursive_build_kd_tree(tree_p, first_element, end_left, LEFT_CHILD(current_tree_index), d_type);
+         #pragma omp section
+         recursive_build_kd_tree(tree_p, start_right, last_element, RIGHT_CHILD(current_tree_index), d_type);
+      }
    }
 
    #ifdef DEBUG_KDTREE

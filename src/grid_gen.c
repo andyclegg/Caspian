@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <libgen.h>
 #include <math.h>
+#include <omp.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -731,6 +732,7 @@ int main(int argc, char **argv) {
       float32_t x_0 = central_x - (((float) width / 2.0) * horizontal_resolution);
       float32_t y_0 = central_y - (((float) height / 2.0) * vertical_resolution);
 
+      #pragma omp parallel for
       for (int v=0; v<height; v++) {
          for (int u=0; u<width; u++) {
             int index = (height-v-1)*width + u;
