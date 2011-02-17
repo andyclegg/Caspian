@@ -18,7 +18,7 @@
 
 #define KDTREE_FILE_FORMAT 1
 
-void save_to_file(struct tree *tree_p, FILE *output_file) {
+void kdtree_save_to_file(FILE *output_file, struct tree *tree_p) {
    // Write the header to file
    unsigned int file_format_number = KDTREE_FILE_FORMAT;
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
@@ -33,7 +33,7 @@ void save_to_file(struct tree *tree_p, FILE *output_file) {
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
 }
 
-struct tree *read_from_file(FILE *input_file) {
+struct tree *kdtree_read_from_file(FILE *input_file) {
    // Read and check the header
    unsigned int file_format_number;
    unsigned int num_elements;

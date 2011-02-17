@@ -21,24 +21,25 @@
 #define WGS84_POLAR_CIRCUMFERENCE 40007863.0
 #define WGS84_EQUATORIAL_CIRCUMFERENCE 40075017.0
 
-void write_index_to_file(FILE *output_file, struct tree *tree_p, char *projection) {
+void write_index_to_file(FILE *output_file, struct tree *tree_p, projPJ *projection) {
    // Write the header to file
    unsigned int file_format_number = GRIDGEN_FILE_FORMAT;
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
 
    // Write the projection string length and string to file
-   unsigned int projection_string_length = strlen(projection) + 1;
+   char *projection_string = pj_get_def(projection, 0);
+   unsigned int projection_string_length = strlen(projection_string) + 1;
    fwrite(&projection_string_length, sizeof(unsigned int), 1, output_file);
-   fwrite(projection, sizeof(char), projection_string_length, output_file);
+   fwrite(projection_string, sizeof(char), projection_string_length, output_file);
 
    // Write the tree to file
-   save_to_file(tree_p, output_file);
+   kdtree_save_to_file(output_file, tree_p);
 
    // Write a concluding header
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
 }
 
-void read_index_from_file(FILE *input_file, struct tree **tree_p, char **projection_string) {
+void read_index_from_file(FILE *input_file, struct tree **tree_p, projPJ *projection) {
    // Read and check the header
    unsigned int file_format_number;
    unsigned int projection_string_length;
@@ -51,29 +52,36 @@ void read_index_from_file(FILE *input_file, struct tree **tree_p, char **project
    }
 
    // Read the projection string
-   *projection_string = calloc(projection_string_length, sizeof(char));
-   if (*projection_string == NULL) {
+   char *projection_string = calloc(projection_string_length, sizeof(char));
+   if (projection_string == NULL) {
       fprintf(stderr, "Failed to allocate space (%d chars) for projection string\n", projection_string_length);
       exit(-1);
    }
-   fread(*projection_string, sizeof(char), projection_string_length, input_file);
+   fread(projection_string, sizeof(char), projection_string_length, input_file);
 
    // Paranoid checks on projection string
-   if ((*projection_string)[projection_string_length-1] != '\0') {
-      fprintf(stderr, "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n", projection_string_length, (*projection_string)[projection_string_length - 1]);
+   if (projection_string[projection_string_length-1] != '\0') {
+      fprintf(stderr, "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n", projection_string_length, projection_string[projection_string_length - 1]);
       // Don't attempt to print out the projection string as we know it's
       // corrupt - very bad things may happen!
       exit(-1);
    }
-   if (strlen(*projection_string) != projection_string_length -1) {
+   if (strlen(projection_string) != projection_string_length -1) {
       fprintf(stderr, "Corrupted string read from file (string length is wrong)\n");
       // Don't attempt to print out the projection string as we know it's
       // corrupt - very bad things may happen!
       exit(-1);
    }
 
+   // Initialize the projection
+   projection = pj_init_plus(projection_string);
+   if (projection == NULL) {
+      fprintf(stderr, "Critical: Couldn't initialize projection\n");
+      exit(-1);
+   }
+
    // Read kdtree
-   *tree_p = read_from_file(input_file);
+   *tree_p = kdtree_read_from_file(input_file);
 
    // Check concluding header
    fread(&file_format_number, sizeof(unsigned int), 1, input_file);
@@ -599,25 +607,14 @@ int main(int argc, char **argv) {
    r_attrs.output_fill_value = output_fill_value;
 
 
-
-
    projPJ *projection;
    struct tree *root_p;
-   unsigned int number_records;
 
    if (loading_index) {
       // Read from disk
       FILE *input_index_file = fopen(input_index_filename, "r");
-      read_index_from_file(input_index_file, &root_p, &projection_string);
-      printf("Read projection string %s\n", projection_string);
-      // Initialize the projection
-      projection = pj_init_plus(projection_string);
-      if (projection == NULL) {
-         fprintf(stderr, "Critical: Couldn't initialize projection\n");
-         return -1;
-      }
+      read_index_from_file(input_index_file, &root_p, projection);
       fclose(input_index_file);
-      number_records = root_p->num_elements;
    } else {
       // Initialize the projection
       projection = pj_init_plus(projection_string);
@@ -642,15 +639,14 @@ int main(int argc, char **argv) {
       }
       end_time = time(NULL);
       printf("Tree built\n");
-
       printf("Building tree took %d seconds\n", (int) (end_time - start_time));
 
-      number_records = latlon_reader_get_num_records(reader);
+      latlon_reader_free(reader);
 
       if (saving_index) {
          // Save to disk
          FILE *output_index_file = fopen(output_index_filename, "w");
-         write_index_to_file(output_index_file, root_p, projection_string);
+         write_index_to_file(output_index_file, root_p, projection);
          fclose(output_index_file);
       }
    }
@@ -662,7 +658,7 @@ int main(int argc, char **argv) {
 
    if (generating_image) {
 
-      unsigned int input_data_number_bytes = number_records * input_dtype.size;
+      unsigned int input_data_number_bytes = root_p->num_elements * input_dtype.size;
       unsigned int output_data_number_bytes = width * height * output_dtype.size;
       unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
       mode_t creation_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
