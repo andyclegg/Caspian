@@ -17,7 +17,6 @@ latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, proj
    size_t no_elements;
    FILE *lat_file, *lon_file;
 
-   //TODO :Check return valeus of stat
    if(stat(lat_filename, &lat_stat) != 0) {
       printf("Critical: Could not stat the latitude file %s (%s)\n", lat_filename, strerror(errno));
       return NULL;
