@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <math.h>
 
 #include <proj_api.h>
 
@@ -88,6 +89,10 @@ int latlon_reader_read(latlon_reader_t *reader, float *x, float *y) {
    // Read, project and store a single latitude and longitude pair
    fread(&latitude, sizeof(float), 1, reader->lat_file);
    fread(&longitude, sizeof(float), 1, reader->lon_file);
+   if (!isfinite(latitude) || !isfinite(longitude)) {
+      fprintf(stderr, "Non-finite latitude/longitude read (NaN or Inf)\n");
+      exit(-1);
+   }
    projection_input.u = longitude * DEG_TO_RAD;
    projection_input.v = latitude * DEG_TO_RAD;
    projection_output = pj_fwd(projection_input, reader->projection);
