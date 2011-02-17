@@ -305,40 +305,40 @@ void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *att
 
 void help(char *prog) {
    printf("Usage: %s <options>\n", basename(prog));
-   printf("Options                         Default                           Help\n");
+   printf("Options                         Default                      Help\n");
    printf(" Index controls\n");
-   printf("  --input-lats <filename>                                         Specify filename for input latitude\n");
-   printf("  --input-lons <filename>                                         Specify filename for input longitude\n");
-   printf("  --projection <string>         +proj=latlong +datum=WGS84        Specify projection using PROJ.4 compatible string\n");
-   printf("  --save-index <filename>                                         Save the index to a file\n");
-   printf("  --load-index <filename>                                         Load a pre-generated index from a file\n");
+   printf("  --input-lats <filename>                                    Specify filename for input latitude\n");
+   printf("  --input-lons <filename>                                    Specify filename for input longitude\n");
+   printf("  --projection <string>         +proj=eqc +datum=WGS84       Specify projection using PROJ.4 compatible string\n");
+   printf("  --save-index <filename>                                    Save the index to a file\n");
+   printf("  --load-index <filename>                                    Load a pre-generated index from a file\n");
    printf("\n");
    printf(" Input data\n");
-   printf("  --input-data <filename>                                         Specify filename for input data\n");
-   printf("  --input-dtype <dtype>         float32                           Specify dtype for input data file\n");
-   printf("  --input-fill-value <number>   -999.0                            Specify fill value for input data file\n");
+   printf("  --input-data <filename>                                    Specify filename for input data\n");
+   printf("  --input-dtype <dtype>         float32                      Specify dtype for input data file\n");
+   printf("  --input-fill-value <number>   -999.0                       Specify fill value for input data file\n");
    printf("\n");
    printf(" Output data\n");
-   printf("  --output-data <filename>                                        Specify filename for output data\n");
-   printf("  --output-dtype <dtype>        float32                           Specify dtype for output data file\n");
-   printf("  --output-fill-value <number>  -999.0                            Specify fill value for output data file\n");
-   printf("  --output-lats <filename>                                        Specify filename for output latitude\n");
-   printf("  --output-lons <filename>                                        Specify filename for output longitude\n");
+   printf("  --output-data <filename>                                   Specify filename for output data\n");
+   printf("  --output-dtype <dtype>        float32                      Specify dtype for output data file\n");
+   printf("  --output-fill-value <number>  -999.0                       Specify fill value for output data file\n");
+   printf("  --output-lats <filename>                                   Specify filename for output latitude\n");
+   printf("  --output-lons <filename>                                   Specify filename for output longitude\n");
    printf("\n");
    printf(" Image generation\n");
-   printf("  --height <integer>            360                               Height of output grid\n");
-   printf("  --width <integer>             720                               Width of output grid\n");
-   printf("  --vres <number>               polar circumference / height      Vertical resolution of output grid, in projection units (metres)\n");
-   printf("  --hres <number>               equatorial circumference / width  Horizontal resolution of output grid, in projection units (metres)\n");
-   printf("  --central-y <number>          0.0                               Vertical position of centre of output grid, in projection units (metres)\n");
-   printf("  --central-x <number>          0.0                               Horizontal position of centre of output grid, in projection units (metres)\n");
-   printf("  --vsample <number>            value of --vres                   Vertical sampling resolution\n");
-   printf("  --hsample <number>            value of --hres                   Horizontal sampling resolution\n");
-   printf("  --mapping-function <string>   mean                              Choose mapping function to use\n");
+   printf("  --height <integer>            360                          Height of output grid\n");
+   printf("  --width <integer>             720                          Width of output grid\n");
+   printf("  --vres <number>               polar circumf. / height      Vertical resolution of output grid, in projection units (metres)\n");
+   printf("  --hres <number>               equatorial circumf. / width  Horizontal resolution of output grid, in projection units (metres)\n");
+   printf("  --central-y <number>          0.0                          Vertical position of centre of output grid, in projection units (metres)\n");
+   printf("  --central-x <number>          0.0                          Horizontal position of centre of output grid, in projection units (metres)\n");
+   printf("  --vsample <number>            value of --vres              Vertical sampling resolution\n");
+   printf("  --hsample <number>            value of --hres              Horizontal sampling resolution\n");
+   printf("  --mapping-function <string>   mean                         Choose mapping function to use\n");
    printf("\n");
    printf(" General\n");
-   printf("  --verbose                                                       Increase verbosity\n");
-   printf("  --help                                                          Show this help message\n");
+   printf("  --verbose                                                  Increase verbosity\n");
+   printf("  --help                                                     Show this help message\n");
    printf("\n");
    printf("Numeric functions: mean, weighted_mean, median\n");
    printf("Numeric function dtypes: ");
@@ -364,7 +364,7 @@ int main(int argc, char **argv) {
    char *input_index_filename = NULL, *output_index_filename = NULL;
    int loading_index = 0, saving_index = 0;
    int generating_image = 0;
-   char *projection_string = "+proj=latlong +datum=WGS84";
+   char *projection_string = "+proj=eqc +datum=WGS84";
    int width = 720, height = 360;
    double horizontal_resolution = 0.0, vertical_resolution = 0.0;
    double horizontal_sampling = 0.0, vertical_sampling = 0.0;
@@ -748,14 +748,14 @@ int main(int argc, char **argv) {
    // Unmap all files
    munmap(data, input_data_number_bytes);
    munmap(data_output, output_data_number_bytes);
-   munmap(lats_output, output_geo_number_bytes);
-   munmap(lons_output, output_geo_number_bytes);
+   if (write_lats) munmap(lats_output, output_geo_number_bytes);
+   if (write_lons) munmap(lons_output, output_geo_number_bytes);
 
    // Close all files
    close(data_fd);
    close(data_output_fd);
-   close(lats_output_fd);
-   close(lons_output_fd);
+   if (write_lats) close(lats_output_fd);
+   if (write_lons) close(lons_output_fd);
 
    // Free option strings
    free(input_data_filename);
@@ -764,7 +764,7 @@ int main(int argc, char **argv) {
    free(output_data_filename);
    free(output_lat_filename);
    free(output_lon_filename);
-   free(projection_string);
+   free(projection_string); // TODO: Check validity of this when projection_string is initialised with string literal
 
    // Free working data
    free_tree(root_p);
