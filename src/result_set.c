@@ -33,7 +33,7 @@ void result_set_insert(result_set_t *set, float x, float y, int record_index) {
    pthread_mutex_unlock(&set->write_lock);
 }
 
-void result_set_prepare_iteration(result_set_t *set) {
+void result_set_reset_iteration(result_set_t *set) {
    set->current = set->head;
 }
 
@@ -59,7 +59,6 @@ void print_result_set(result_set_t *set) {
    printf("Results:\n");
    set->current = set->head;
    struct result_set_item *current;
-   result_set_prepare_iteration(set);
    while ((current = result_set_iterate(set)) != NULL) {
       printf("%d @ (%f, %f)\n", current->record_index, current->x, current->y);
    }

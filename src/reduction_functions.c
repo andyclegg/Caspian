@@ -12,7 +12,6 @@ void reduce_numeric_mean(result_set_t *set, struct reduction_attrs *attrs, float
    register unsigned int current_number_of_values = 0;
 
    struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
@@ -38,7 +37,6 @@ void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *a
    float32_t central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
 
    struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
 
    register float current_distance;
    while ((current_item = result_set_iterate(set)) != NULL) {
@@ -71,7 +69,6 @@ void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, flo
    if (values == NULL) { exit(1); }
 
    struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
@@ -97,7 +94,6 @@ void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *att
    NUMERIC_WORKING_TYPE central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
 
    struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
