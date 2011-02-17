@@ -12,6 +12,7 @@ struct result_set_item {
 typedef struct result_set {
    struct result_set_item *head, *current, *tail;
    pthread_mutex_t write_lock;
+   unsigned int length;
 } result_set_t;
 
 result_set_t *result_set_init();
