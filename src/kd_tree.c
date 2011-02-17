@@ -334,11 +334,27 @@ static int recursive_build_kd_tree(kdtree *tree_p,unsigned int first_element,uns
       float lon_min = FLT_MAX;
       float lat_max = -FLT_MAX;
       float lon_max = -FLT_MAX;
-      for (unsigned int current_index = first_element; current_index <= last_element; current_index++) {
-         lat_min = fmin(lat_min, observations[current_index].dimensions[Y]);
-         lon_min = fmin(lon_min, observations[current_index].dimensions[X]);
-         lat_max = fmax(lat_max, observations[current_index].dimensions[Y]);
-         lon_max = fmax(lon_max, observations[current_index].dimensions[X]);
+      if (current_sort_dimension == X) {
+         lon_min = observations[first_element].dimensions[X];
+         lon_max = observations[last_element].dimensions[X];
+         for (unsigned int current_index = first_element; current_index <= last_element; current_index++) {
+            lat_min = fmin(lat_min, observations[current_index].dimensions[Y]);
+            lat_max = fmax(lat_max, observations[current_index].dimensions[Y]);
+         }
+      } else if (current_sort_dimension == Y) {
+         lat_min = observations[first_element].dimensions[Y];
+         lat_max = observations[last_element].dimensions[Y];
+         for (unsigned int current_index = first_element; current_index <= last_element; current_index++) {
+            lon_min = fmin(lon_min, observations[current_index].dimensions[X]);
+            lon_max = fmax(lon_max, observations[current_index].dimensions[X]);
+         }
+      } else {
+         for (unsigned int current_index = first_element; current_index <= last_element; current_index+=2) {
+            lat_min = fmin(lat_min, observations[current_index].dimensions[Y]);
+            lon_min = fmin(lon_min, observations[current_index].dimensions[X]);
+            lat_max = fmax(lat_max, observations[current_index].dimensions[Y]);
+            lon_max = fmax(lon_max, observations[current_index].dimensions[X]);
+         }
       }
       #ifdef DEBUG_KDTREE
       printf("Lat: %f -> %f\nLon: %f -> %f\n", lat_min, lat_max, lon_min, lon_max);
