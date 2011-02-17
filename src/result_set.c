@@ -9,6 +9,7 @@ result_set_t *result_set_init() {
    set->head = NULL;
    set->current = NULL;
    set->tail = NULL;
+   set->length = 0;
    pthread_mutex_init(&set->write_lock, NULL);
    return set;
 }
@@ -30,6 +31,7 @@ void result_set_insert(result_set_t *set, float x, float y, int record_index) {
       set->tail->next = new_item;
       set->tail = new_item;
    }
+   set->length++;
    pthread_mutex_unlock(&set->write_lock);
 }
 
@@ -65,13 +67,5 @@ void print_result_set(result_set_t *set) {
 }
 
 unsigned int result_set_len(result_set_t *set) {
-   unsigned int count = 0;
-   struct result_set_item *current = set->head;
-
-   while (current != NULL) {
-      current = current->next;
-      count++;
-   }
-
-   return count;
+   return set->length;
 }
