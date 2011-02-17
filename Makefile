@@ -1,4 +1,4 @@
-SOURCE_FILES=src/median.c src/grid_gen.c src/result_set.c src/latlon_reader.c src/kd_tree.c src/data_handling.c
+SOURCE_FILES=src/median.c src/grid_gen.c src/result_set.c src/latlon_reader.c src/kd_tree.c src/data_handling.c src/reduction_functions.c
 LDFLAGS=-lm -lproj
 CFLAGS=-std=c99 -Wall
 

@@ -8,7 +8,7 @@ typedef double float64_t;
 
 // Enumerate the dtypes
 enum dtype_e {uint8, uint16, uint32, uint64, int8, int16, int32, int64, float32, float64, coded8, coded16, coded32, coded64, undef_type};
-// Enumerate mapping function types
+// Enumerate reduction function types
 enum style_e {coded, numeric, undef_style};
 
 // Dtype struct encoding specifier, size and coded/non-coded

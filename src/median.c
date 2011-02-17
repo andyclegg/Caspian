@@ -1,6 +1,6 @@
 #include "kd_tree.h"
 #include "median.h"
-#include "grid_gen.h"
+#include "data_handling.h"
 
 static int partition(NUMERIC_WORKING_TYPE *values, int first, int last)
 {

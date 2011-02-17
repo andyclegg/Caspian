@@ -13,10 +13,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "grid_gen.h"
 #include "kd_tree.h"
-#include "median.h"
 #include "data_handling.h"
+#include "reduction_functions.h"
 
 #define GRIDGEN_FILE_FORMAT 1
 #define WGS84_POLAR_CIRCUMFERENCE 40007863.0
@@ -94,115 +93,6 @@ void read_index_from_file(FILE *input_file, struct tree **tree_p, projPJ *projec
    // Done! :-)
 }
 
-
-void reduce_numeric_mean(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
-   register NUMERIC_WORKING_TYPE current_sum = 0.0;
-   register NUMERIC_WORKING_TYPE query_data_value;
-   register unsigned int current_number_of_values = 0;
-
-   struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
-
-   while ((current_item = result_set_iterate(set)) != NULL) {
-      query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
-
-      if(query_data_value == attrs->input_fill_value) {
-         continue;
-      }
-      current_sum += query_data_value;
-      current_number_of_values++;
-   }
-
-   NUMERIC_WORKING_TYPE output_value = (current_number_of_values == 0) ? (attrs->output_fill_value) : (current_sum / (NUMERIC_WORKING_TYPE) current_number_of_values);
-
-
-   numeric_put(output_data, output_dtype, output_index, output_value);
-}
-
-void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
-   register float lowest_distance = FLT_MAX;
-   void *best_value = malloc(input_dtype.size);
-   register short int value_stored = 0;
-
-   float32_t central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
-   float32_t central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
-
-   struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
-
-   register float current_distance;
-   while ((current_item = result_set_iterate(set)) != NULL) {
-      current_distance = powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2);
-      if (current_distance < lowest_distance) {
-         // We have a new nearest neighbour, replace in the value
-         lowest_distance = current_distance;
-         coded_get(input_data, input_dtype, current_item->record_index, best_value);
-         value_stored = value_stored || 1;
-      }
-   }
-
-   if (!value_stored) {
-      memset(best_value, 0, input_dtype.size);
-   }
-
-   // Store the value
-   coded_put(output_data, output_dtype, output_index, best_value);
-
-   // Cleanup
-   free(best_value);
-}
-
-void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
-   unsigned int maximum_number_results = result_set_len(set); // maximum because some will be fill values
-   unsigned int current_number_results = 0;
-   register NUMERIC_WORKING_TYPE query_data_value;
-
-   NUMERIC_WORKING_TYPE *values = calloc(sizeof(NUMERIC_WORKING_TYPE), maximum_number_results);
-   if (values == NULL) { exit(1); }
-
-   struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
-
-   while ((current_item = result_set_iterate(set)) != NULL) {
-      query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
-      if(query_data_value == attrs->input_fill_value) {
-         continue;
-      }
-      values[current_number_results++] = query_data_value;
-   }
-
-   // Now get the median
-   NUMERIC_WORKING_TYPE output_value = (current_number_results == 0) ? attrs->output_fill_value : median(values, current_number_results);
-   numeric_put(output_data, output_dtype, output_index, output_value);
-
-   // Free our working array of floats
-   free(values);
-}
-
-void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
-   register NUMERIC_WORKING_TYPE current_sum = 0.0, total_distance = 0.0;
-   register NUMERIC_WORKING_TYPE query_data_value, current_distance; //Initialized on each loop
-
-   NUMERIC_WORKING_TYPE central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
-   NUMERIC_WORKING_TYPE central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
-
-   struct result_set_item *current_item;
-   result_set_prepare_iteration(set);
-
-   while ((current_item = result_set_iterate(set)) != NULL) {
-      query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
-
-      if(query_data_value == attrs->input_fill_value) {
-         continue;
-      }
-      current_distance = sqrt(powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2));
-      current_sum += query_data_value * current_distance;
-      total_distance += current_distance;
-   }
-
-   numeric_put(output_data, output_dtype, output_index, (total_distance == 0.0) ? attrs->output_fill_value : current_sum / total_distance);
-}
-
 void help(char *prog) {
    printf("Usage: %s <options>\n", basename(prog));
    printf("Options                         Default                      Help\n");
@@ -234,7 +124,7 @@ void help(char *prog) {
    printf("  --central-x <number>          0.0                          Horizontal position of centre of output grid, in projection units (metres)\n");
    printf("  --vsample <number>            value of --vres              Vertical sampling resolution\n");
    printf("  --hsample <number>            value of --hres              Horizontal sampling resolution\n");
-   printf("  --mapping-function <string>   mean                         Choose mapping function to use\n");
+   printf("  --reduction-function <string> mean                         Choose reduction function to use\n");
    printf("\n");
    printf(" General\n");
    printf("  --verbose                                                  Increase verbosity\n");
@@ -271,7 +161,7 @@ int main(int argc, char **argv) {
    double horizontal_sampling = 0.0, vertical_sampling = 0.0;
    double central_x = 0.0, central_y = 0.0;
    dtype input_dtype = {float32, 4, numeric, "float32"}, output_dtype = {float32, 4, numeric, "float32"};
-   int selected_mapping_function_index = 0;
+   reduction_function selected_reduction_function = get_reduction_function_by_name("mean");
    NUMERIC_WORKING_TYPE input_fill_value = -999.0, output_fill_value = -999.0;
    int verbosity = 0;
    time_t start_time, end_time;
@@ -280,13 +170,6 @@ int main(int argc, char **argv) {
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {
       printf("Unsupported system: 'float' and 'double' not 4 and 8 bytes respectively\n");
    }
-
-   mapping_function reduction_functions[] = {
-      {"mean", numeric, &reduce_numeric_mean},
-      {"weighted_mean", numeric, &reduce_numeric_weighted_mean},
-      {"median", numeric, &reduce_numeric_median},
-      {"nearest_neighbour", coded, &reduce_coded_nearest_neighbour}
-   };
 
    int curarg, option_index = 0;
    // Parse command line arguments
@@ -297,7 +180,7 @@ int main(int argc, char **argv) {
       {"output-data", 1, 0, 'D'},
       {"output-lats", 1, 0, 'A'},
       {"output-lons", 1, 0, 'O'},
-      {"mapping-function", 1, 0, 'm'},
+      {"reduction-function", 1, 0, 'r'},
       {"projection", 1, 0, 'p'},
       {"width", 1, 0, 'w'},
       {"height", 1, 0, 'h'},
@@ -327,16 +210,10 @@ int main(int argc, char **argv) {
          case '?':
             help(argv[0]);
             return 0;
-         case 'm': // Mapping function
-            // Get the appropriate mapping function struct
-            for (int i=0; i<4; i++) { // TODO FIX HARDCODEDNESS!
-               if (strcmp(reduction_functions[i].name, optarg) == 0) {
-                  selected_mapping_function_index = i;
-                  break;
-               }
-            }
-            if (selected_mapping_function_index == -1) {
-               fprintf(stderr, "Unknown mapping function '%s'\n", optarg);
+         case 'r': // Reduction function
+            selected_reduction_function = get_reduction_function_by_name(optarg);
+            if (reduction_function_is_undef(selected_reduction_function)) {
+               fprintf(stderr, "Unknown reduction function '%s'\n", optarg);
                exit(-1);
             }
             break;
@@ -443,13 +320,12 @@ int main(int argc, char **argv) {
    }
 
    // Validate coded/non-coded functions/data types
-   mapping_function reduction_function = reduction_functions[selected_mapping_function_index];
-   if (reduction_function.type == coded) {
+   if (selected_reduction_function.type == coded) {
       // Input and output dtype must be the same and coded
       if (input_dtype.type != coded || output_dtype.type != coded || !dtype_equal(input_dtype, output_dtype)) {
          fprintf(stderr, "When using a coded mapping function, input and output dtype must be the same, and of coded type\n");
       }
-   } else if (reduction_function.type == numeric) {
+   } else if (selected_reduction_function.type == numeric) {
       if (input_dtype.type != numeric || output_dtype.type != numeric) {
          fprintf(stderr, "When using a numeric mapping function, input and output dtype must be numeric\n");
       }
@@ -638,7 +514,7 @@ int main(int argc, char **argv) {
                float32_t query_dimensions[4] = {bl_x, tr_x, bl_y, tr_y};
 
                result_set_t *current_result_set = query_tree(root_p, query_dimensions);
-               reduction_function.call(current_result_set, &r_attrs, query_dimensions, data_input, data_output, index, input_dtype, output_dtype);
+               selected_reduction_function.call(current_result_set, &r_attrs, query_dimensions, data_input, data_output, index, input_dtype, output_dtype);
                result_set_free(current_result_set);
             }
 

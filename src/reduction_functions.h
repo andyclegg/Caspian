@@ -1,15 +1,15 @@
-#ifndef HEADER_GRID_GEN
-#define HEADER_GRID_GEN
+#ifndef HEADER_REDUCTION_FUNCTIONS
+#define HEADER_REDUCTION_FUNCTIONS
 
-#include "result_set.h"
 #include "data_handling.h"
+#include "result_set.h"
 
 struct reduction_attrs {
    NUMERIC_WORKING_TYPE input_fill_value;
    NUMERIC_WORKING_TYPE output_fill_value;
 };
 
-typedef struct mapping_function_s {
+typedef struct {
    char* name;
    enum style_e type;
    void (*call)(
@@ -22,6 +22,8 @@ typedef struct mapping_function_s {
       dtype input_dtype,
       dtype output_dtype
    );
-} mapping_function;
+} reduction_function;
 
+reduction_function get_reduction_function_by_name(char *name);
+int reduction_function_is_undef(reduction_function f);
 #endif
