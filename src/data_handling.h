@@ -34,5 +34,6 @@ NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index);
 void coded_get(void *data, dtype input_dtype, int index, void *output);
 void coded_put(void *data, dtype output_dtype, int index, void *input);
 void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE data_item);
+dtype dtype_string_parse(char *dtype_string);
 
 #endif
