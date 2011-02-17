@@ -360,11 +360,12 @@ int main(int argc, char **argv) {
 
    char *input_data_filename = NULL, *input_lat_filename = NULL, *input_lon_filename = NULL;
    char *output_data_filename = NULL, *output_lat_filename = NULL, *output_lon_filename = NULL;
-   int write_lats = 0, write_lons = 0;
+   int write_lats = 0, write_lons = 0, write_data = 0;
    char *input_index_filename = NULL, *output_index_filename = NULL;
    int loading_index = 0, saving_index = 0;
    int generating_image = 0;
    char *projection_string = "+proj=eqc +datum=WGS84";
+   int using_default_projection_string = 1;
    int width = 720, height = 360;
    double horizontal_resolution = 0.0, vertical_resolution = 0.0;
    double horizontal_sampling = 0.0, vertical_sampling = 0.0;
@@ -373,6 +374,7 @@ int main(int argc, char **argv) {
    int selected_mapping_function_index = 0;
    NUMERIC_WORKING_TYPE input_fill_value = -999.0, output_fill_value = -999.0;
    int verbosity = 0;
+   time_t start_time, end_time;
 
    // Paranoid dtype checks
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {
@@ -448,6 +450,7 @@ int main(int argc, char **argv) {
             break;
          case 'p':
             save_optarg_string(projection_string);
+            using_default_projection_string = 0;
             break;
          case 'd':
             save_optarg_string(input_data_filename);
@@ -461,13 +464,16 @@ int main(int argc, char **argv) {
          case 'D':
             save_optarg_string(output_data_filename);
             generating_image = 1;
+            write_data = 1;
             break;
          case 'A':
             save_optarg_string(output_lat_filename);
+            generating_image = 1;
             write_lats = 1;
             break;
          case 'O':
             save_optarg_string(output_lon_filename);
+            generating_image = 1;
             write_lons = 1;
             break;
          case 'w':
@@ -536,9 +542,6 @@ int main(int argc, char **argv) {
       }
    }
 
-
-
-
    // Validate coded/non-coded functions/data types
    mapping_function reduction_function = reduction_functions[selected_mapping_function_index];
    if (reduction_function.type == coded) {
@@ -588,174 +591,204 @@ int main(int argc, char **argv) {
       printf("Horizontal/Vertical Resolution: %f/%f\n", horizontal_resolution, vertical_resolution);
    }
 
-   struct tree *root_p;
-   int result;
 
    // Reduction options
    struct reduction_attrs r_attrs;
    r_attrs.input_fill_value = input_fill_value;
    r_attrs.output_fill_value = output_fill_value;
 
-   // Initialize the projection
-   projPJ *projection = pj_init_plus(projection_string);
-   if (projection == NULL) {
-      fprintf(stderr, "Critical: Couldn't initialize projection\n");
-      return -1;
-   }
 
-   latlon_reader_t *reader = latlon_reader_init(input_lat_filename, input_lon_filename, projection);
 
-   if (reader == NULL) {
-      printf("Failed to initialise data reader\n");
-      return -1;
-   }
 
-   unsigned int input_data_number_bytes = latlon_reader_get_num_records(reader) * input_dtype.size;
-   unsigned int output_data_number_bytes = width * height * output_dtype.size;
-   unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
+   projPJ *projection;
+   struct tree *root_p;
+   unsigned int number_records;
 
-   printf("Mapping %d bytes of input data into memory\n", input_data_number_bytes);
-   int data_fd = open(input_data_filename, O_RDONLY);
-   if (data_fd == -1) {
-      printf("Failed to open input data file %s\n", input_data_filename);
-      return -1;
-   }
-   char *data = mmap(0, input_data_number_bytes, PROT_READ, MAP_SHARED, data_fd, 0);
-   if (data == MAP_FAILED) {
-      printf("Failed to map data into memory (%s)\n", strerror(errno));
-      return -1;
-   }
-
-   printf("Creating output files\n");
-   mode_t creation_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-   int output_open_flags = O_CREAT | O_TRUNC | O_RDWR;
-
-   int data_output_fd = open(output_data_filename, output_open_flags, creation_mode);
-   if(posix_fallocate(data_output_fd, 0, output_data_number_bytes) != 0) {
-      printf("Failed to allocate space in file system\n");
-      return -1;
-   }
-   char *data_output = mmap(0, output_data_number_bytes, PROT_WRITE, MAP_SHARED, data_output_fd, 0);
-   if (data_output == MAP_FAILED) {
-      printf("Failed to map output data into memory (%s)\n", strerror(errno));
-      return -1;
-   }
-
-   int lats_output_fd  = -1;
-   float *lats_output = NULL;
-   if (write_lats) {
-      lats_output_fd= open(output_lat_filename, output_open_flags, creation_mode);
-      if(posix_fallocate(lats_output_fd, 0, output_geo_number_bytes) != 0) {
-         printf("Failed to allocate space in file system\n");
+   if (loading_index) {
+      // Read from disk
+      FILE *input_index_file = fopen(input_index_filename, "r");
+      read_index_from_file(input_index_file, &root_p, &projection_string);
+      printf("Read projection string %s\n", projection_string);
+      // Initialize the projection
+      projection = pj_init_plus(projection_string);
+      if (projection == NULL) {
+         fprintf(stderr, "Critical: Couldn't initialize projection\n");
          return -1;
       }
-      lats_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lats_output_fd, 0);
-      if (lats_output == MAP_FAILED) {
-         printf("Failed to map output lats file into memory (%s)\n", strerror(errno));
+      fclose(input_index_file);
+      number_records = root_p->num_elements;
+   } else {
+      // Initialize the projection
+      projection = pj_init_plus(projection_string);
+      if (projection == NULL) {
+         fprintf(stderr, "Critical: Couldn't initialize projection\n");
          return -1;
+      }
+
+      latlon_reader_t *reader = latlon_reader_init(input_lat_filename, input_lon_filename, projection);
+
+      if (reader == NULL) {
+         printf("Failed to initialise data reader\n");
+         return -1;
+      }
+
+      printf("Building indices\n");
+      start_time = time(NULL);
+      int result = fill_tree_from_reader(&root_p, reader);
+      if (!result) {
+         printf("Failed to build tree\n");
+         return result;
+      }
+      end_time = time(NULL);
+      printf("Tree built\n");
+
+      printf("Building tree took %d seconds\n", (int) (end_time - start_time));
+
+      number_records = latlon_reader_get_num_records(reader);
+
+      if (saving_index) {
+         // Save to disk
+         FILE *output_index_file = fopen(output_index_filename, "w");
+         write_index_to_file(output_index_file, root_p, projection_string);
+         fclose(output_index_file);
       }
    }
 
-   int lons_output_fd = -1;
-   float *lons_output = NULL;
-   if (write_lons) {
-      lons_output_fd = open(output_lon_filename, output_open_flags, creation_mode);
-      if(posix_fallocate(lons_output_fd, 0, output_geo_number_bytes) != 0) {
-         printf("Failed to allocate space in file system\n");
-         return -1;
-      }
-      lons_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lons_output_fd, 0);
-      if (lons_output == MAP_FAILED) {
-         printf("Failed to map output lons file into memory (%s)\n", strerror(errno));
-         return -1;
-      }
-   }
-
-   time_t start_time, end_time;
-   printf("Building indices\n");
-   start_time = time(NULL);
-   result = fill_tree_from_reader(&root_p, reader);
-   if (!result) {
-      printf("Failed to build tree\n");
-      return result;
-   }
-   end_time = time(NULL);
-   printf("Tree built\n");
-
-   printf("Building tree took %d seconds\n", (int) (end_time - start_time));
 
    printf("Verifying tree\n");
    verify_tree(root_p);
    printf("Tree verified as correct\n");
 
-   // Save to disk
-   FILE *output_index_file = fopen("index", "w");
-   write_index_to_file(output_index_file, root_p, projection_string);
-   fclose(output_index_file);
+   if (generating_image) {
 
-   // Clear the tree
-   free_tree(root_p);
+      unsigned int input_data_number_bytes = number_records * input_dtype.size;
+      unsigned int output_data_number_bytes = width * height * output_dtype.size;
+      unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
+      mode_t creation_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+      int output_open_flags = O_CREAT | O_TRUNC | O_RDWR;
 
-   // Read from disk
-   FILE *input_index_file = fopen("index", "r");
-   read_index_from_file(input_index_file, &root_p, &projection_string);
-   printf("Read projection string %s\n", projection_string);
+      int data_input_fd = -1, data_output_fd = -1;
+      char *data_input = NULL, *data_output = NULL;
+      if (write_data) {
+         printf("Mapping %d bytes of input data into memory\n", input_data_number_bytes);
+         data_input_fd = open(input_data_filename, O_RDONLY);
+         if (data_input_fd == -1) {
+            printf("Failed to open input data file %s\n", input_data_filename);
+            return -1;
+         }
+         data_input = mmap(0, input_data_number_bytes, PROT_READ, MAP_SHARED, data_input_fd, 0);
+         if (data_input == MAP_FAILED) {
+            printf("Failed to map data into memory (%s)\n", strerror(errno));
+            return -1;
+         }
 
-   printf("Building output image\n");
-   start_time = time(NULL);
-
-   float32_t x_0 = central_x - (((float) width / 2.0) * horizontal_resolution);
-   float32_t y_0 = central_y - (((float) height / 2.0) * vertical_resolution);
-
-   for (int v=0; v<height; v++) {
-      for (int u=0; u<width; u++) {
-         int index = (height-v-1)*width + u;
-
-         float32_t cr_x = x_0 + ((float) u + 0.5) * horizontal_resolution;
-         float32_t cr_y = y_0 + ((float) v + 0.5) * vertical_resolution;
-
-         float32_t bl_x = cr_x - horizontal_sampling_offset;
-         float32_t bl_y = cr_y - vertical_sampling_offset;
-
-         float32_t tr_x = cr_x + horizontal_sampling_offset;
-         float32_t tr_y = cr_y + vertical_sampling_offset;
-
-         float32_t query_dimensions[4] = {bl_x, tr_x, bl_y, tr_y};
-
-         result_set_t *current_result_set = query_tree(root_p, query_dimensions);
-         reduction_function.call(current_result_set, &r_attrs, query_dimensions, data, data_output, index, input_dtype, output_dtype);
-         result_set_free(current_result_set);
-
-         if (write_lats || write_lons) {
-            // Get the central latitude and longitude for this cell, and store
-            projUV projection_input, projection_output;
-            projection_input.u = (tr_y + bl_y) / 2.0;
-            projection_input.v = (tr_x + bl_x) / 2.0;
-
-            projection_output = pj_inv(projection_input, projection);
-            if (write_lats) lats_output[index] = projection_output.v * RAD_TO_DEG;
-            if (write_lons) lons_output[index] = projection_output.u * RAD_TO_DEG;
-            #ifdef DEBUG
-            printf("(%d, %d) => (%f:%f, %f:%f)\n", u, v, bl_x, tr_x, bl_y, tr_y);
-            #endif
+         printf("Mapping %d bytes of output data into memory\n", output_data_number_bytes);
+         data_output_fd = open(output_data_filename, output_open_flags, creation_mode);
+         if(posix_fallocate(data_output_fd, 0, output_data_number_bytes) != 0) {
+            printf("Failed to allocate space in file system\n");
+            return -1;
+         }
+         data_output = mmap(0, output_data_number_bytes, PROT_WRITE, MAP_SHARED, data_output_fd, 0);
+         if (data_output == MAP_FAILED) {
+            printf("Failed to map output data into memory (%s)\n", strerror(errno));
+            return -1;
          }
       }
+
+      int lats_output_fd  = -1;
+      float *lats_output = NULL;
+      if (write_lats) {
+         lats_output_fd= open(output_lat_filename, output_open_flags, creation_mode);
+         if(posix_fallocate(lats_output_fd, 0, output_geo_number_bytes) != 0) {
+            printf("Failed to allocate space in file system\n");
+            return -1;
+         }
+         lats_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lats_output_fd, 0);
+         if (lats_output == MAP_FAILED) {
+            printf("Failed to map output lats file into memory (%s)\n", strerror(errno));
+            return -1;
+         }
+      }
+
+      int lons_output_fd = -1;
+      float *lons_output = NULL;
+      if (write_lons) {
+         lons_output_fd = open(output_lon_filename, output_open_flags, creation_mode);
+         if(posix_fallocate(lons_output_fd, 0, output_geo_number_bytes) != 0) {
+            printf("Failed to allocate space in file system\n");
+            return -1;
+         }
+         lons_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lons_output_fd, 0);
+         if (lons_output == MAP_FAILED) {
+            printf("Failed to map output lons file into memory (%s)\n", strerror(errno));
+            return -1;
+         }
+      }
+
+      printf("Building output image\n");
+      start_time = time(NULL);
+
+      float32_t x_0 = central_x - (((float) width / 2.0) * horizontal_resolution);
+      float32_t y_0 = central_y - (((float) height / 2.0) * vertical_resolution);
+
+      for (int v=0; v<height; v++) {
+         for (int u=0; u<width; u++) {
+            int index = (height-v-1)*width + u;
+
+            float32_t cr_x = x_0 + ((float) u + 0.5) * horizontal_resolution;
+            float32_t cr_y = y_0 + ((float) v + 0.5) * vertical_resolution;
+
+            float32_t bl_x = cr_x - horizontal_sampling_offset;
+            float32_t bl_y = cr_y - vertical_sampling_offset;
+
+            float32_t tr_x = cr_x + horizontal_sampling_offset;
+            float32_t tr_y = cr_y + vertical_sampling_offset;
+
+            if (write_data) {
+
+               float32_t query_dimensions[4] = {bl_x, tr_x, bl_y, tr_y};
+
+               result_set_t *current_result_set = query_tree(root_p, query_dimensions);
+               reduction_function.call(current_result_set, &r_attrs, query_dimensions, data_input, data_output, index, input_dtype, output_dtype);
+               result_set_free(current_result_set);
+            }
+
+            if (write_lats || write_lons) {
+               // Get the central latitude and longitude for this cell, and store
+               projUV projection_input, projection_output;
+               projection_input.u = (tr_y + bl_y) / 2.0;
+               projection_input.v = (tr_x + bl_x) / 2.0;
+
+               projection_output = pj_inv(projection_input, projection);
+               if (write_lats) lats_output[index] = projection_output.v * RAD_TO_DEG;
+               if (write_lons) lons_output[index] = projection_output.u * RAD_TO_DEG;
+               #ifdef DEBUG
+               printf("(%d, %d) => (%f:%f, %f:%f)\n", u, v, bl_x, tr_x, bl_y, tr_y);
+               #endif
+            }
+         }
+      }
+      end_time = time(NULL);
+      printf("Output image built.\n");
+      printf("Building image took %d seconds\n", (int) (end_time - start_time));
+
+      // Unmap and close files
+      if (write_data) {
+         munmap(data_input, input_data_number_bytes);
+         munmap(data_output, output_data_number_bytes);
+         close(data_input_fd);
+         close(data_output_fd);
+      }
+      if (write_lats) {
+         munmap(lats_output, output_geo_number_bytes);
+         close(lats_output_fd);
+      }
+      if (write_lons) {
+         munmap(lons_output, output_geo_number_bytes);
+         close(lons_output_fd);
+      }
    }
-   end_time = time(NULL);
-   printf("Output image built.\n");
-   printf("Building image took %d seconds\n", (int) (end_time - start_time));
 
-   // Unmap all files
-   munmap(data, input_data_number_bytes);
-   munmap(data_output, output_data_number_bytes);
-   if (write_lats) munmap(lats_output, output_geo_number_bytes);
-   if (write_lons) munmap(lons_output, output_geo_number_bytes);
-
-   // Close all files
-   close(data_fd);
-   close(data_output_fd);
-   if (write_lats) close(lats_output_fd);
-   if (write_lons) close(lons_output_fd);
 
    // Free option strings
    free(input_data_filename);
@@ -764,7 +797,7 @@ int main(int argc, char **argv) {
    free(output_data_filename);
    free(output_lat_filename);
    free(output_lon_filename);
-   free(projection_string); // TODO: Check validity of this when projection_string is initialised with string literal
+   if (!using_default_projection_string) free(projection_string);
 
    // Free working data
    free_tree(root_p);
