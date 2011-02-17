@@ -16,6 +16,74 @@
 #include "kd_tree.h"
 #include "median.h"
 
+#define GRIDGEN_FILE_FORMAT 1
+#define WGS84_POLAR_CIRCUMFERENCE 40007863.0
+#define WGS84_EQUATORIAL_CIRCUMFERENCE 40075017.0
+
+void write_index_to_file(FILE *output_file, struct tree *tree_p, char *projection) {
+   // Write the header to file
+   unsigned int file_format_number = GRIDGEN_FILE_FORMAT;
+   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
+
+   // Write the projection string length and string to file
+   unsigned int projection_string_length = strlen(projection) + 1;
+   fwrite(&projection_string_length, sizeof(unsigned int), 1, output_file);
+   fwrite(projection, sizeof(char), projection_string_length, output_file);
+
+   // Write the tree to file
+   save_to_file(tree_p, output_file);
+
+   // Write a concluding header
+   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
+}
+
+void read_index_from_file(FILE *input_file, struct tree **tree_p, char **projection_string) {
+   // Read and check the header
+   unsigned int file_format_number;
+   unsigned int projection_string_length;
+   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
+   fread(&projection_string_length, sizeof(unsigned int), 1, input_file);
+
+   if (file_format_number != GRIDGEN_FILE_FORMAT) {
+      fprintf(stderr, "Wrong disk file format (read %d, expected %d)\n", file_format_number, GRIDGEN_FILE_FORMAT);
+      exit(-1);
+   }
+
+   // Read the projection string
+   *projection_string = calloc(projection_string_length, sizeof(char));
+   if (*projection_string == NULL) {
+      fprintf(stderr, "Failed to allocate space (%d chars) for projection string\n", projection_string_length);
+      exit(-1);
+   }
+   fread(*projection_string, sizeof(char), projection_string_length, input_file);
+
+   // Paranoid checks on projection string
+   if ((*projection_string)[projection_string_length-1] != '\0') {
+      fprintf(stderr, "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n", projection_string_length, (*projection_string)[projection_string_length - 1]);
+      // Don't attempt to print out the projection string as we know it's
+      // corrupt - very bad things may happen!
+      exit(-1);
+   }
+   if (strlen(*projection_string) != projection_string_length -1) {
+      fprintf(stderr, "Corrupted string read from file (string length is wrong)\n");
+      // Don't attempt to print out the projection string as we know it's
+      // corrupt - very bad things may happen!
+      exit(-1);
+   }
+
+   // Read kdtree
+   *tree_p = read_from_file(input_file);
+
+   // Check concluding header
+   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
+   if (file_format_number != GRIDGEN_FILE_FORMAT) {
+      fprintf(stderr, "Wrong concluding header (read %d, expected %d)\n", file_format_number, GRIDGEN_FILE_FORMAT);
+      exit(-1);
+   }
+
+   // Done! :-)
+}
+
 NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index) {
    switch (input_dtype.specifier) {
       case uint8:
@@ -237,67 +305,74 @@ void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *att
 
 void help(char *prog) {
    printf("Usage: %s <options>\n", basename(prog));
-   printf("Options:\n");
+   printf("Options                         Default                           Help\n");
+   printf(" Index controls\n");
+   printf("  --input-lats <filename>                                         Specify filename for input latitude\n");
+   printf("  --input-lons <filename>                                         Specify filename for input longitude\n");
+   printf("  --projection <string>         +proj=latlong +datum=WGS84        Specify projection using PROJ.4 compatible string\n");
+   printf("  --save-index <filename>                                         Save the index to a file\n");
+   printf("  --load-index <filename>                                         Load a pre-generated index from a file\n");
+   printf("\n");
    printf(" Input data\n");
-   printf("\t--input-data\t\tSpecify filename for input data\n");
-   printf("\t--input-dtype\t\tSpecify dtype for input data file\n");
-   printf("\t--input-fill-value\tSpecify fill value for input data file\n");
-   printf("\t--input-lats\t\tSpecify filename for input latitude\n");
-   printf("\t--input-lons\t\tSpecify filename for input longitude\n");
+   printf("  --input-data <filename>                                         Specify filename for input data\n");
+   printf("  --input-dtype <dtype>         float32                           Specify dtype for input data file\n");
+   printf("  --input-fill-value <number>   -999.0                            Specify fill value for input data file\n");
    printf("\n");
    printf(" Output data\n");
-   printf("\t--output-data\t\tSpecify filename for output data\n");
-   printf("\t--output-dtype\t\tSpecify dtype for output data file\n");
-   printf("\t--output-fill-value\tSpecify fill value for output data file\n");
-   printf("\t--output-lats\t\tSpecify filename for output latitude\n");
-   printf("\t--output-lons\t\tSpecify filename for output longitude\n");
+   printf("  --output-data <filename>                                        Specify filename for output data\n");
+   printf("  --output-dtype <dtype>        float32                           Specify dtype for output data file\n");
+   printf("  --output-fill-value <number>  -999.0                            Specify fill value for output data file\n");
+   printf("  --output-lats <filename>                                        Specify filename for output latitude\n");
+   printf("  --output-lons <filename>                                        Specify filename for output longitude\n");
    printf("\n");
-   printf(" Output grid parameters\n");
-   printf("\t--projection\t\tSpecify projection using PROJ.4 compatible string\n");
-   printf("\t--height\t\tHeight of output grid\n");
-   printf("\t--width \t\tWidth of output grid\n");
-   printf("\t--vres\t\t\tVertical resolution of output grid, in projection units (metres)\n");
-   printf("\t--hres\t\t\tHorizontal resolution of output grid, in projection units (metres)\n");
-   printf("\t--central-y\t\tVertical position of centre of output grid, in projection units (metres)\n");
-   printf("\t--central-x\t\tHorizontal position of centre of output grid, in projection units (metres)\n");
-   printf("\t--vsample\t\tVertical sampling resolution (default is equal to vertical resolution)\n");
-   printf("\t--hsample\t\tHorizontal sampling resolution (default is equal to vertical resolution)\n");
+   printf(" Image generation\n");
+   printf("  --height <integer>            360                               Height of output grid\n");
+   printf("  --width <integer>             720                               Width of output grid\n");
+   printf("  --vres <number>               polar circumference / height      Vertical resolution of output grid, in projection units (metres)\n");
+   printf("  --hres <number>               equatorial circumference / width  Horizontal resolution of output grid, in projection units (metres)\n");
+   printf("  --central-y <number>          0.0                               Vertical position of centre of output grid, in projection units (metres)\n");
+   printf("  --central-x <number>          0.0                               Horizontal position of centre of output grid, in projection units (metres)\n");
+   printf("  --vsample <number>            value of --vres                   Vertical sampling resolution\n");
+   printf("  --hsample <number>            value of --hres                   Horizontal sampling resolution\n");
+   printf("  --mapping-function <string>   mean                              Choose mapping function to use\n");
    printf("\n");
-   printf("Valid dtypes for numeric functions are:\n");
-   printf("uint8\n");
-   printf("uint16\n");
-   printf("uint32\n");
+   printf(" General\n");
+   printf("  --verbose                                                       Increase verbosity\n");
+   printf("  --help                                                          Show this help message\n");
+   printf("\n");
+   printf("Numeric functions: mean, weighted_mean, median\n");
+   printf("Numeric function dtypes: ");
+   printf("uint8, uint16, uint32, ");
    #ifdef SIXTYFOURBIT
-   printf("uint64\n");
+   printf("uint64, ");
    #endif
-   printf("int8\n");
-   printf("int16\n");
-   printf("int32\n");
+   printf("int8, int16, int32, ");
    #ifdef SIXTYFOURBIT
-   printf("int64\n");
+   printf("int64, ");
    #endif
-   printf("float32\n");
-   printf("float64\n");
+   printf("float32, float64\n");
    printf("\n");
-   printf("Valid dtypes for coded functions are:\n");
-   printf("coded8\n");
-   printf("coded16\n");
-   printf("coded32\n");
-   printf("coded64\n");
+   printf("Coded functions: nearest_neighbour\n");
+   printf("Coded function dtypes: coded8, coded16, coded32, coded64\n");
 }
 
 int main(int argc, char **argv) {
 
    char *input_data_filename = NULL, *input_lat_filename = NULL, *input_lon_filename = NULL;
    char *output_data_filename = NULL, *output_lat_filename = NULL, *output_lon_filename = NULL;
-   char *projection_string = NULL;
-   int width = 0, height = 0;
+   int write_lats = 0, write_lons = 0;
+   char *input_index_filename = NULL, *output_index_filename = NULL;
+   int loading_index = 0, saving_index = 0;
+   int generating_image = 0;
+   char *projection_string = "+proj=latlong +datum=WGS84";
+   int width = 720, height = 360;
    double horizontal_resolution = 0.0, vertical_resolution = 0.0;
    double horizontal_sampling = 0.0, vertical_sampling = 0.0;
    double central_x = 0.0, central_y = 0.0;
-   dtype input_dtype = {undef_type, 0, undef_style, "undef"}, output_dtype = {undef_type, 0, undef_style, "undef"};
-   int selected_mapping_function_index = -1;
-   NUMERIC_WORKING_TYPE input_fill_value = 0.0, output_fill_value = 0.0;
+   dtype input_dtype = {float32, 4, numeric, "float32"}, output_dtype = {float32, 4, numeric, "float32"};
+   int selected_mapping_function_index = 0;
+   NUMERIC_WORKING_TYPE input_fill_value = -999.0, output_fill_value = -999.0;
+   int verbosity = 0;
 
    // Paranoid dtype checks
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {
@@ -334,10 +409,22 @@ int main(int argc, char **argv) {
       {"central-y", 1, 0, 'y'},
       {"hsample", 1, 0, 's'},
       {"vsample", 1, 0, 'S'},
+      {"load-index", 1, 0, 'i'},
+      {"save-index", 1, 0, 'I'},
+      {"help", 0, 0, '?'},
+      {"verbose", 0, 0, '+'},
    };
+
+   #define save_optarg_string(x) x = calloc(strlen(optarg) + 1, sizeof(char)); strcpy(x, optarg)
 
    while((curarg = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
       switch (curarg) {
+         case '+':
+            verbosity++;
+            break;
+         case '?':
+            help(argv[0]);
+            return 0;
          case 'm': // Mapping function
             // Get the appropriate mapping function struct
             for (int i=0; i<4; i++) { // TODO FIX HARDCODEDNESS!
@@ -351,33 +438,37 @@ int main(int argc, char **argv) {
                exit(-1);
             }
             break;
+         case 'i':
+            save_optarg_string(input_index_filename);
+            loading_index = 1;
+            break;
+         case 'I':
+            save_optarg_string(output_index_filename);
+            saving_index = 1;
+            break;
          case 'p':
-            projection_string = calloc(strlen(optarg), sizeof(char));
-            strcpy(projection_string, optarg);
+            save_optarg_string(projection_string);
             break;
          case 'd':
-            input_data_filename = calloc(strlen(optarg), sizeof(char));
-            strcpy(input_data_filename, optarg);
+            save_optarg_string(input_data_filename);
             break;
          case 'a':
-            input_lat_filename = calloc(strlen(optarg), sizeof(char));
-            strcpy(input_lat_filename, optarg);
+            save_optarg_string(input_lat_filename);
             break;
          case 'o':
-            input_lon_filename = calloc(strlen(optarg), sizeof(char));
-            strcpy(input_lon_filename, optarg);
+            save_optarg_string(input_lon_filename);
             break;
          case 'D':
-            output_data_filename = calloc(strlen(optarg), sizeof(char));
-            strcpy(output_data_filename, optarg);
+            save_optarg_string(output_data_filename);
+            generating_image = 1;
             break;
          case 'A':
-            output_lat_filename = calloc(strlen(optarg), sizeof(char));
-            strcpy(output_lat_filename, optarg);
+            save_optarg_string(output_lat_filename);
+            write_lats = 1;
             break;
          case 'O':
-            output_lon_filename = calloc(strlen(optarg), sizeof(char));
-            strcpy(output_lon_filename, optarg);
+            save_optarg_string(output_lon_filename);
+            write_lons = 1;
             break;
          case 'w':
             width = atoi(optarg);
@@ -422,41 +513,31 @@ int main(int argc, char **argv) {
       }
    }
 
-   // Check we have required options
-   if (
-      input_data_filename == NULL ||
-      input_lat_filename == NULL ||
-      input_lon_filename == NULL ||
-      output_data_filename == NULL ||
-      output_lat_filename == NULL ||
-      output_lon_filename == NULL ||
-      projection_string == NULL ||
-      width == 0 ||
-      height == 0 ||
-      horizontal_resolution == 0.0 ||
-      vertical_resolution == 0.0 ||
-      input_dtype.type == undef_type ||
-      output_dtype.type == undef_type ||
-      selected_mapping_function_index == -1
-   ) {
-      printf("Not all required options supplied\n");
-      help(argv[0]);
-      return -1;
+   // Check we have required options - required options depends on mode of operation
+   if (saving_index || (generating_image && !loading_index)) {
+      if (input_lat_filename == NULL || input_lon_filename == NULL || projection_string == NULL) {
+         char *message;
+         if (saving_index) {
+            message = "To generate an index,";
+         } else {
+            message = "To generate an image without loading an index,";
+         }
+         fprintf(stderr, "%s you must provide --input-lats, --input-lons, and --projection\n", saving_index ? "To generate an index," : "To generate an image without loading an index");
+         help(argv[0]);
+         return -1;
+      }
    }
 
-   #ifdef DEBUG
-   printf("Start up parameters:\n");
-   printf("Input Data filename: %s\n", input_data_filename);
-   printf("Input Lats filename: %s\n", input_lat_filename);
-   printf("Input Lons filename: %s\n", input_lon_filename);
-   printf("Output Data filename: %s\n", output_data_filename);
-   printf("Output Lats filename: %s\n", output_lat_filename);
-   printf("Output Lons filename: %s\n", output_lon_filename);
-   printf("Projection String: %s\n", projection_string);
-   printf("Width/Height: %d/%d\n", width, height);
-   printf("Horizontal/Vertical Resolution: %f/%f\n", horizontal_resolution, vertical_resolution);
-   printf("Central X/Y: ");
-   #endif
+   if (generating_image) {
+      if (input_data_filename == NULL || output_data_filename == NULL) {
+         fprintf(stderr, "When generating an image, you must provide --input-data and --output-data\n");
+         help(argv[0]);
+         return -1;
+      }
+   }
+
+
+
 
    // Validate coded/non-coded functions/data types
    mapping_function reduction_function = reduction_functions[selected_mapping_function_index];
@@ -471,6 +552,14 @@ int main(int argc, char **argv) {
       }
    }
 
+   // Set horizontal and vertical resolutions to default values if not set
+   if (horizontal_resolution == 0.0) {
+      horizontal_resolution = WGS84_EQUATORIAL_CIRCUMFERENCE / (float) width;
+   }
+   if (vertical_resolution == 0.0) {
+      vertical_resolution = WGS84_POLAR_CIRCUMFERENCE / (float) height;
+   }
+
    // Set sampling factor offset to be equal to resolution/2 if not set, otherwise to provided value/2
    float horizontal_sampling_offset, vertical_sampling_offset;
    if (horizontal_sampling == 0.0) {
@@ -482,6 +571,21 @@ int main(int argc, char **argv) {
       vertical_sampling_offset = vertical_resolution / 2.0;
    } else {
       vertical_sampling_offset = vertical_sampling / 2.0;
+   }
+
+
+
+   if (verbosity > 0) {
+      printf("Start up parameters:\n");
+      printf("Input Data filename: %s\n", input_data_filename);
+      printf("Input Lats filename: %s\n", input_lat_filename);
+      printf("Input Lons filename: %s\n", input_lon_filename);
+      printf("Output Data filename: %s\n", output_data_filename);
+      printf("Output Lats filename: %s\n", output_lat_filename);
+      printf("Output Lons filename: %s\n", output_lon_filename);
+      printf("Projection String: %s\n", projection_string);
+      printf("Width/Height: %d/%d\n", width, height);
+      printf("Horizontal/Vertical Resolution: %f/%f\n", horizontal_resolution, vertical_resolution);
    }
 
    struct tree *root_p;
@@ -537,26 +641,34 @@ int main(int argc, char **argv) {
       return -1;
    }
 
-   int lats_output_fd = open(output_lat_filename, output_open_flags, creation_mode);
-   if(posix_fallocate(lats_output_fd, 0, output_geo_number_bytes) != 0) {
-      printf("Failed to allocate space in file system\n");
-      return -1;
-   }
-   float *lats_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lats_output_fd, 0);
-   if (lats_output == MAP_FAILED) {
-      printf("Failed to map output lats file into memory (%s)\n", strerror(errno));
-      return -1;
+   int lats_output_fd  = -1;
+   float *lats_output = NULL;
+   if (write_lats) {
+      lats_output_fd= open(output_lat_filename, output_open_flags, creation_mode);
+      if(posix_fallocate(lats_output_fd, 0, output_geo_number_bytes) != 0) {
+         printf("Failed to allocate space in file system\n");
+         return -1;
+      }
+      lats_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lats_output_fd, 0);
+      if (lats_output == MAP_FAILED) {
+         printf("Failed to map output lats file into memory (%s)\n", strerror(errno));
+         return -1;
+      }
    }
 
-   int lons_output_fd = open(output_lon_filename, output_open_flags, creation_mode);
-   if(posix_fallocate(lons_output_fd, 0, output_geo_number_bytes) != 0) {
-      printf("Failed to allocate space in file system\n");
-      return -1;
-   }
-   float *lons_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lons_output_fd, 0);
-   if (lons_output == MAP_FAILED) {
-      printf("Failed to map output lons file into memory (%s)\n", strerror(errno));
-      return -1;
+   int lons_output_fd = -1;
+   float *lons_output = NULL;
+   if (write_lons) {
+      lons_output_fd = open(output_lon_filename, output_open_flags, creation_mode);
+      if(posix_fallocate(lons_output_fd, 0, output_geo_number_bytes) != 0) {
+         printf("Failed to allocate space in file system\n");
+         return -1;
+      }
+      lons_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lons_output_fd, 0);
+      if (lons_output == MAP_FAILED) {
+         printf("Failed to map output lons file into memory (%s)\n", strerror(errno));
+         return -1;
+      }
    }
 
    time_t start_time, end_time;
@@ -576,6 +688,18 @@ int main(int argc, char **argv) {
    verify_tree(root_p);
    printf("Tree verified as correct\n");
 
+   // Save to disk
+   FILE *output_index_file = fopen("index", "w");
+   write_index_to_file(output_index_file, root_p, projection_string);
+   fclose(output_index_file);
+
+   // Clear the tree
+   free_tree(root_p);
+
+   // Read from disk
+   FILE *input_index_file = fopen("index", "r");
+   read_index_from_file(input_index_file, &root_p, &projection_string);
+   printf("Read projection string %s\n", projection_string);
 
    printf("Building output image\n");
    start_time = time(NULL);
@@ -602,17 +726,19 @@ int main(int argc, char **argv) {
          reduction_function.call(current_result_set, &r_attrs, query_dimensions, data, data_output, index, input_dtype, output_dtype);
          result_set_free(current_result_set);
 
-         // Get the central latitude and longitude for this cell, and store
-         projUV projection_input, projection_output;
-         projection_input.u = (tr_y + bl_y) / 2.0;
-         projection_input.v = (tr_x + bl_x) / 2.0;
+         if (write_lats || write_lons) {
+            // Get the central latitude and longitude for this cell, and store
+            projUV projection_input, projection_output;
+            projection_input.u = (tr_y + bl_y) / 2.0;
+            projection_input.v = (tr_x + bl_x) / 2.0;
 
-         projection_output = pj_inv(projection_input, projection);
-         lats_output[index] = projection_output.v * RAD_TO_DEG;
-         lons_output[index] = projection_output.u * RAD_TO_DEG;
-         #ifdef DEBUG
-         printf("(%d, %d) => (%f:%f, %f:%f)\n", u, v, bl_x, tr_x, bl_y, tr_y);
-         #endif
+            projection_output = pj_inv(projection_input, projection);
+            if (write_lats) lats_output[index] = projection_output.v * RAD_TO_DEG;
+            if (write_lons) lons_output[index] = projection_output.u * RAD_TO_DEG;
+            #ifdef DEBUG
+            printf("(%d, %d) => (%f:%f, %f:%f)\n", u, v, bl_x, tr_x, bl_y, tr_y);
+            #endif
+         }
       }
    }
    end_time = time(NULL);
