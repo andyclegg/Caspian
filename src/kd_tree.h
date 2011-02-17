@@ -31,6 +31,8 @@ void verify_tree(struct tree *tree_p);
 void construct_tree(struct tree **tree_pp, unsigned int num_elements);
 void free_tree(struct tree *tree_p);
 void inspect_tree(struct tree *tree_p);
+void save_to_file(struct tree *tree_p, FILE *output_file);
+struct tree *read_from_file(FILE *input_file);
 
 #define X  0
 #define Y 1

@@ -18,6 +18,62 @@
 
 #define FORKDEPTH 2
 
+#define KDTREE_FILE_FORMAT 1
+
+void save_to_file(struct tree *tree_p, FILE *output_file) {
+   // Write the header to file
+   unsigned int file_format_number = KDTREE_FILE_FORMAT;
+   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
+   fwrite(&tree_p->num_elements, sizeof(unsigned int), 1, output_file);
+   fwrite(&tree_p->tree_num_nodes, sizeof(unsigned int), 1, output_file);
+
+   // Write the data to file
+   fwrite(tree_p->tree_nodes, sizeof(struct tree_node), tree_p->tree_num_nodes, output_file);
+   fwrite(tree_p->observations, sizeof(struct observation), tree_p->num_elements, output_file);
+
+   // Write an end of file marker for paranoia
+   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
+}
+
+struct tree *read_from_file(FILE *input_file) {
+   // Read and check the header
+   unsigned int file_format_number;
+   unsigned int num_elements;
+   unsigned int tree_num_nodes;
+   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
+   fread(&num_elements, sizeof(unsigned int), 1, input_file);
+   fread(&tree_num_nodes, sizeof(unsigned int), 1, input_file);
+
+   if (file_format_number != KDTREE_FILE_FORMAT) {
+      fprintf(stderr, "Wrong disk file format (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
+      exit(-1);
+   }
+
+   // Create tree
+   struct tree *tree_p;
+   construct_tree(&tree_p, num_elements);
+
+   // Check the computed number of tree nodes against the number read from file
+   if (tree_num_nodes != tree_p->tree_num_nodes) {
+      fprintf(stderr, "Mismatch in number of tree nodes (read %d, computed %d)\n", tree_num_nodes, tree_p->tree_num_nodes);
+      exit(-1);
+   }
+
+   // Read the data into the tree
+   fread(tree_p->tree_nodes, sizeof(struct tree_node), tree_p->tree_num_nodes, input_file);
+   fread(tree_p->observations, sizeof(struct observation), tree_p->num_elements, input_file);
+
+   // Paranoidly check the end of file header
+   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
+   if (file_format_number != KDTREE_FILE_FORMAT) {
+      fprintf(stderr, "End of file marker incorrect (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
+      exit(-1);
+   }
+
+   // All done!
+   return tree_p;
+}
+
 static void inspect_tree_node(struct tree *tree_p, unsigned int current_index, int indent) {
    printf("%d", current_index);
    for (int i=1; i<=indent; i++) {
