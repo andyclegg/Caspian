@@ -14,10 +14,11 @@ result_set_t *result_set_init() {
    return set;
 }
 
-void result_set_insert(result_set_t *set, float x, float y, int record_index) {
+void result_set_insert(result_set_t *set, float x, float y, float t, int record_index) {
    struct result_set_item *new_item = malloc(sizeof(struct result_set_item));
    new_item->x = x;
    new_item->y = y;
+   new_item->t = t;
    new_item->record_index = record_index;
    new_item->next = NULL;
 

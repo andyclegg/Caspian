@@ -99,6 +99,7 @@ void help(char *prog) {
    printf(" Index controls\n");
    printf("  --input-lats <filename>                                    Specify filename for input latitude\n");
    printf("  --input-lons <filename>                                    Specify filename for input longitude\n");
+   printf("  --input-time <filename>                                    Specify filename for input time\n");
    printf("  --projection <string>         +proj=eqc +datum=WGS84       Specify projection using PROJ.4 compatible string\n");
    printf("  --save-index <filename>                                    Save the index to a file\n");
    printf("  --load-index <filename>                                    Load a pre-generated index from a file\n");
@@ -125,6 +126,8 @@ void help(char *prog) {
    printf("  --vsample <number>            value of --vres              Vertical sampling resolution\n");
    printf("  --hsample <number>            value of --hres              Horizontal sampling resolution\n");
    printf("  --reduction-function <string> mean                         Choose reduction function to use\n");
+   printf("  --time-min                    -inf                         Earliest time to select from\n");
+   printf("  --time-max                    +inf                         Latest time to select from\n");
    printf("\n");
    printf(" General\n");
    printf("  --verbose                                                  Increase verbosity\n");
@@ -148,7 +151,7 @@ void help(char *prog) {
 
 int main(int argc, char **argv) {
 
-   char *input_data_filename = NULL, *input_lat_filename = NULL, *input_lon_filename = NULL;
+   char *input_data_filename = NULL, *input_lat_filename = NULL, *input_lon_filename = NULL, *input_time_filename = NULL;
    char *output_data_filename = NULL, *output_lat_filename = NULL, *output_lon_filename = NULL;
    int write_lats = 0, write_lons = 0, write_data = 0;
    char *input_index_filename = NULL, *output_index_filename = NULL;
@@ -165,6 +168,7 @@ int main(int argc, char **argv) {
    NUMERIC_WORKING_TYPE input_fill_value = -999.0, output_fill_value = -999.0;
    int verbosity = 0;
    time_t start_time, end_time;
+   float time_min = -INFINITY, time_max = +INFINITY;
 
    // Paranoid dtype checks
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {
@@ -177,6 +181,7 @@ int main(int argc, char **argv) {
       {"input-data", 1, 0, 'd'},
       {"input-lats", 1, 0, 'a'},
       {"input-lons", 1, 0, 'o'},
+      {"input-time", 1, 0, 'e'},
       {"output-data", 1, 0, 'D'},
       {"output-lats", 1, 0, 'A'},
       {"output-lons", 1, 0, 'O'},
@@ -198,12 +203,23 @@ int main(int argc, char **argv) {
       {"save-index", 1, 0, 'I'},
       {"help", 0, 0, '?'},
       {"verbose", 0, 0, '+'},
+      {"time-min", 1, 0, 'q'},
+      {"time-max", 1, 0, 'Q'},
    };
 
    #define save_optarg_string(x) x = calloc(strlen(optarg) + 1, sizeof(char)); strcpy(x, optarg)
 
    while((curarg = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
       switch (curarg) {
+         case 'q':
+            time_min = atof(optarg);
+            break;
+         case 'Q':
+            time_max = atof(optarg);
+            break;
+         case 'e':
+            save_optarg_string(input_time_filename);
+            break;
          case '+':
             verbosity++;
             break;
@@ -298,14 +314,14 @@ int main(int argc, char **argv) {
 
    // Check we have required options - required options depends on mode of operation
    if (saving_index || (generating_image && !loading_index)) {
-      if (input_lat_filename == NULL || input_lon_filename == NULL || projection_string == NULL) {
+      if (input_lat_filename == NULL || input_lon_filename == NULL || input_time_filename == NULL || projection_string == NULL) {
          char *message;
          if (saving_index) {
             message = "To generate an index,";
          } else {
             message = "To generate an image without loading an index,";
          }
-         fprintf(stderr, "%s you must provide --input-lats, --input-lons, and --projection\n", saving_index ? "To generate an index," : "To generate an image without loading an index");
+         fprintf(stderr, "%s you must provide --input-lats, --input-lons, --input-time, and --projection\n", saving_index ? "To generate an index," : "To generate an image without loading an index");
          help(argv[0]);
          return -1;
       }
@@ -374,7 +390,7 @@ int main(int argc, char **argv) {
    r_attrs.output_fill_value = output_fill_value;
 
 
-   projPJ *projection;
+   projPJ *projection = NULL;
    struct tree *root_p;
 
    if (loading_index) {
@@ -390,7 +406,7 @@ int main(int argc, char **argv) {
          return -1;
       }
 
-      latlon_reader_t *reader = latlon_reader_init(input_lat_filename, input_lon_filename, projection);
+      latlon_reader_t *reader = latlon_reader_init(input_lat_filename, input_lon_filename, input_time_filename, projection);
 
       if (reader == NULL) {
          printf("Failed to initialise data reader\n");
@@ -406,7 +422,7 @@ int main(int argc, char **argv) {
       }
       end_time = time(NULL);
       printf("Tree built\n");
-      printf("Building tree took %d seconds\n", (int) (end_time - start_time));
+      printf("Building index took %d seconds\n", (int) (end_time - start_time));
 
       latlon_reader_free(reader);
 
@@ -497,6 +513,7 @@ int main(int argc, char **argv) {
 
       #pragma omp parallel for
       for (int v=0; v<height; v++) {
+         printf("%d\n", v);
          for (int u=0; u<width; u++) {
             int index = (height-v-1)*width + u;
 
@@ -511,7 +528,7 @@ int main(int argc, char **argv) {
 
             if (write_data) {
 
-               float32_t query_dimensions[4] = {bl_x, tr_x, bl_y, tr_y};
+               float32_t query_dimensions[] = {bl_x, tr_x, bl_y, tr_y, time_min, time_max};
 
                result_set_t *current_result_set = query_tree(root_p, query_dimensions);
                selected_reduction_function.call(current_result_set, &r_attrs, query_dimensions, data_input, data_output, index, input_dtype, output_dtype);
