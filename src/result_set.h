@@ -5,6 +5,7 @@
 struct result_set_item {
    float x;
    float y;
+   float t;
    int record_index;
    struct result_set_item *next;
 };
@@ -16,7 +17,7 @@ typedef struct result_set {
 } result_set_t;
 
 result_set_t *result_set_init();
-void result_set_insert(result_set_t *set, float x, float y, int record_index);
+void result_set_insert(result_set_t *set, float x, float y, float t, int record_index);
 void result_set_free(result_set_t *set);
 void print_result_set(result_set_t *set);
 void result_set_reset_iteration(result_set_t *set);
