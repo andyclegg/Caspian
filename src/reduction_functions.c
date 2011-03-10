@@ -60,6 +60,28 @@ void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *a
    free(best_value);
 }
 
+void reduce_numeric_newest(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+   register float latest = -FLT_MAX;
+   register NUMERIC_WORKING_TYPE query_data_value;
+   register NUMERIC_WORKING_TYPE newest_data_value = attrs->output_fill_value;
+
+   struct result_set_item *current_item;
+
+   while ((current_item = result_set_iterate(set)) != NULL) {
+      query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
+      if(query_data_value == attrs->input_fill_value) {
+         continue;
+      }
+      if (current_item->t > latest) {
+         latest = current_item->t;
+         newest_data_value = query_data_value;
+      }
+   }
+
+   // Store the value
+   numeric_put(output_data, output_dtype, output_index, newest_data_value);
+}
+
 void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    unsigned int maximum_number_results = result_set_len(set); // maximum because some will be fill values
    unsigned int current_number_results = 0;
@@ -115,9 +137,10 @@ reduction_function get_reduction_function_by_name(char *name) {
       {"mean", numeric, &reduce_numeric_mean},
       {"weighted_mean", numeric, &reduce_numeric_weighted_mean},
       {"median", numeric, &reduce_numeric_median},
-      {"nearest_neighbour", coded, &reduce_coded_nearest_neighbour}
+      {"nearest_neighbour", coded, &reduce_coded_nearest_neighbour},
+      {"newest", numeric, &reduce_numeric_newest},
    };
-   static int number_reduction_functions = 5;
+   static int number_reduction_functions = 6;
 
    reduction_function result = reduction_functions[0]; //undef
 

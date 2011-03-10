@@ -511,9 +511,10 @@ int main(int argc, char **argv) {
       float32_t x_0 = central_x - (((float) width / 2.0) * horizontal_resolution);
       float32_t y_0 = central_y - (((float) height / 2.0) * vertical_resolution);
 
+      printf("Time: %f -> %f\n", time_min, time_max);
+
       #pragma omp parallel for
       for (int v=0; v<height; v++) {
-         printf("%d\n", v);
          for (int u=0; u<width; u++) {
             int index = (height-v-1)*width + u;
 

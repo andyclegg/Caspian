@@ -155,11 +155,13 @@ static void query_tree_at(struct tree *tree_p, float *dimension_bounds, result_s
          (current_observation->dimensions[Y] >= dimension_bounds[2*Y + LOWER]) &&
          (current_observation->dimensions[Y] <= dimension_bounds[2*Y + UPPER]) &&
          (current_observation->dimensions[X] >= dimension_bounds[2*X + LOWER]) &&
-         (current_observation->dimensions[X] <= dimension_bounds[2*X + UPPER])) {
+         (current_observation->dimensions[X] <= dimension_bounds[2*X + UPPER]) &&
+         (current_observation->dimensions[T] >= dimension_bounds[2*T + LOWER]) &&
+         (current_observation->dimensions[T] <= dimension_bounds[2*T + UPPER])) {
          #ifdef DEBUG_KDTREE
          printf("Result: (%f, %f, %d)\n", current_observation->dimensions[Y], current_observation->dimensions[X], current_observation->file_record_index);
          #endif
-         result_set_insert(results, current_observation->dimensions[X], current_observation->dimensions[Y], current_observation->file_record_index);
+         result_set_insert(results, current_observation->dimensions[X], current_observation->dimensions[Y], current_observation->dimensions[T], current_observation->file_record_index);
       }
       #ifdef DEBUG_KDTREE
         else {
@@ -425,7 +427,7 @@ int fill_tree_from_reader(struct tree **tree_pp, latlon_reader_t *reader) {
    register int result;
    for(int current_index = 0; current_index < no_elements; current_index++) {
       observations[current_index].file_record_index = current_index;
-      result = latlon_reader_read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y]);
+      result = latlon_reader_read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y], &observations[current_index].dimensions[T]);
       if (!result) {
          printf("Critical: Failed to read all elements from files\n");
          return 0;
