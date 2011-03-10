@@ -12,7 +12,7 @@ struct tree_node {
 };
 
 struct observation {
-   float dimensions[2];
+   float dimensions[3];
    unsigned int file_record_index;
 };
 
@@ -36,8 +36,9 @@ struct tree *kdtree_read_from_file(FILE *input_file);
 
 #define X  0
 #define Y 1
-#define TERMINAL  2
-#define UNINITIALISED 3
+#define T 2
+#define TERMINAL  3
+#define UNINITIALISED 4
 #define LOWER 0
 #define UPPER 1
 #endif
