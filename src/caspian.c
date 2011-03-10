@@ -119,7 +119,7 @@ void help(char *prog) {
    printf(" Image generation\n");
    printf("  --height <integer>            360                          Height of output grid\n");
    printf("  --width <integer>             720                          Width of output grid\n");
-   printf("  --vres <number>               polar circumf. / height      Vertical resolution of output grid, in projection units (metres)\n");
+   printf("  --vres <number>               polar circumf. / (2*height)  Vertical resolution of output grid, in projection units (metres)\n");
    printf("  --hres <number>               equatorial circumf. / width  Horizontal resolution of output grid, in projection units (metres)\n");
    printf("  --central-y <number>          0.0                          Vertical position of centre of output grid, in projection units (metres)\n");
    printf("  --central-x <number>          0.0                          Horizontal position of centre of output grid, in projection units (metres)\n");
@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
 
    // Check we have required options - required options depends on mode of operation
    if (saving_index || (generating_image && !loading_index)) {
-      if (input_lat_filename == NULL || input_lon_filename == NULL || input_time_filename == NULL || projection_string == NULL) {
+      if (input_lat_filename == NULL || input_lon_filename == NULL || projection_string == NULL) {
          char *message;
          if (saving_index) {
             message = "To generate an index,";
@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
       horizontal_resolution = WGS84_EQUATORIAL_CIRCUMFERENCE / (float) width;
    }
    if (vertical_resolution == 0.0) {
-      vertical_resolution = WGS84_POLAR_CIRCUMFERENCE / (float) height;
+      vertical_resolution = WGS84_POLAR_CIRCUMFERENCE / (2.0 * (float) height);
    }
 
    // Set sampling factor offset to be equal to resolution/2 if not set, otherwise to provided value/2

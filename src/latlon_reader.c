@@ -26,9 +26,11 @@ latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char
       printf("critical: could not stat the longitude file %s (%s)\n", lon_filename, strerror(errno));
       return NULL;
    }
-   if(stat(time_filename, &time_stat) != 0) {
-      printf("critical: could not stat the time file %s (%s)\n", time_filename, strerror(errno));
-      return NULL;
+   if (time_filename != NULL) {
+      if(stat(time_filename, &time_stat) != 0) {
+         printf("critical: could not stat the time file %s (%s)\n", time_filename, strerror(errno));
+         return NULL;
+      }
    }
 
    //Check file sizes are all equal
@@ -36,9 +38,11 @@ latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char
       fprintf(stderr, "Critical: Lat size != Lon size\n");
       return NULL;
    }
-   if (!(lat_stat.st_size == time_stat.st_size)) {
-      fprintf(stderr, "Critical: Lat size != Time size\n");
-      return NULL;
+   if (time_filename != NULL) {
+      if (!(lat_stat.st_size == time_stat.st_size)) {
+         fprintf(stderr, "Critical: Lat size != Time size\n");
+         return NULL;
+      }
    }
    if ((lat_stat.st_size % sizeof(float)) != 0) {
       fprintf(stderr, "Critical: Size not divisible by %lu\n", sizeof(float));
@@ -48,7 +52,11 @@ latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char
 
    lat_file = fopen(lat_filename, "r");
    lon_file = fopen(lon_filename, "r");
-   time_file = fopen(time_filename, "r");
+   if (time_filename == NULL) {
+      time_file = fopen("/dev/zero", "r");
+   } else {
+      time_file = fopen(time_filename, "r");
+   }
 
    if (lat_file == NULL) {
       fprintf(stderr, "Critical: Couldn't open lat file\n");
