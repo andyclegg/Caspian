@@ -272,15 +272,31 @@ int main(int argc, char **argv) {
             break;
          case 'w':
             width = atoi(optarg);
+            if (width <= 0) {
+               fprintf(stderr, "Width must be a positive integer (got %d)\n", width);
+               exit(-1);
+            }
             break;
          case 'h':
             height = atoi(optarg);
+            if (height <= 0) {
+               fprintf(stderr, "Height must be a positive integer (got %d)\n", height);
+               exit(-1);
+            }
             break;
          case 'H':
             horizontal_resolution = atof(optarg);
+            if (horizontal_resolution <= 0.0) {
+               fprintf(stderr, "Horizontal resolution must be a positive number (got %f)\n", horizontal_resolution);
+               exit(-1);
+            }
             break;
          case 'V':
             vertical_resolution = atof(optarg);
+            if (vertical_resolution <= 0.0) {
+               fprintf(stderr, "Vertical resolution must be a positive number (got %f)\n", vertical_resolution);
+               exit(-1);
+            }
             break;
          case 'x':
             central_x = atof(optarg);
@@ -302,9 +318,17 @@ int main(int argc, char **argv) {
             break;
          case 's':
             horizontal_sampling = atof(optarg);
+            if (horizontal_sampling <= 0.0) {
+               fprintf(stderr, "Horizontal sampling resolution must be a positive number (got %f)\n", horizontal_sampling);
+               exit(-1);
+            }
             break;
          case 'S':
             vertical_sampling = atof(optarg);
+            if (vertical_sampling <= 0.0) {
+               fprintf(stderr, "Vertical sampling resolution must be a positive number (got %f)\n", vertical_sampling);
+               exit(-1);
+            }
             break;
          default:
             printf("Unrecognised option\n");

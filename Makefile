@@ -26,6 +26,7 @@ doc/caspian.pdf: src/doc/caspian.tex
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
+.PHONY: clean
 clean:
 	rm -rf bin/* doc/*
 	latexmk src/doc/caspian.tex -C -cd
