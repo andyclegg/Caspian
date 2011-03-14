@@ -4,20 +4,26 @@ CFLAGS=-std=c99 -Wall
 
 all: caspian debug docs projcalc quickview
 
-projcalc: src/projection_calculator.c
+caspian: bin/caspian
+projcalc: bin/projcalc
+debug: bin/caspian-debug
+docs: doc/caspian.pdf
+quickview: bin/quickview
+
+bin/projcalc: src/projection_calculator.c
 	gcc $(CFLAGS) $(LDFLAGS) $? -o bin/projcalc
 
-caspian: $(SOURCE_FILES)
+bin/caspian: $(SOURCE_FILES)
 	gcc -fopenmp $(CFLAGS) $(LDFLAGS) $(SOURCE_FILES) -O3 -mtune=native -o bin/caspian
 
-debug: $(SOURCE_FILES)
+bin/caspian-debug: $(SOURCE_FILES)
 	gcc -fopenmp $(CFLAGS) $(LDFLAGS) $(SOURCE_FILES) -DDEBUG -ggdb -o bin/caspian-debug
 
-docs: src/doc/caspian.tex
+doc/caspian.pdf: src/doc/caspian.tex
 	latexmk -cd $? -pdfdvi
 	cp -f src/doc/caspian.pdf doc/caspian.pdf
 
-quickview: src/quickview
+bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
 clean:
