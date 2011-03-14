@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 600
 #include <errno.h>
 #include <fcntl.h>
 #include <float.h>
