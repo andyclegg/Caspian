@@ -17,6 +17,8 @@
 #include "kd_tree.h"
 #include "data_handling.h"
 #include "reduction_functions.h"
+#include "grid.h"
+#include "gridding.h"
 
 #define GRIDGEN_FILE_FORMAT 1
 #define WGS84_POLAR_CIRCUMFERENCE 40007863.0
@@ -380,21 +382,6 @@ int main(int argc, char **argv) {
       vertical_resolution = WGS84_POLAR_CIRCUMFERENCE / (2.0 * (float) height);
    }
 
-   // Set sampling factor offset to be equal to resolution/2 if not set, otherwise to provided value/2
-   float horizontal_sampling_offset, vertical_sampling_offset;
-   if (horizontal_sampling == 0.0) {
-      horizontal_sampling_offset = horizontal_resolution / 2.0;
-   } else {
-      horizontal_sampling_offset = horizontal_sampling / 2.0;
-   }
-   if (vertical_sampling == 0.0) {
-      vertical_sampling_offset = vertical_resolution / 2.0;
-   } else {
-      vertical_sampling_offset = vertical_sampling / 2.0;
-   }
-
-
-
    if (verbosity > 0) {
       printf("Start up parameters:\n");
       printf("Input Data filename: %s\n", input_data_filename);
@@ -413,7 +400,6 @@ int main(int argc, char **argv) {
    struct reduction_attrs r_attrs;
    r_attrs.input_fill_value = input_fill_value;
    r_attrs.output_fill_value = output_fill_value;
-
 
    projPJ *projection = NULL;
    struct tree *root_p;
@@ -530,55 +516,32 @@ int main(int argc, char **argv) {
          }
       }
 
-      printf("Building output image\n");
-      start_time = time(NULL);
+      // Setup input and output specs
+      input_spec in;
+      output_spec out;
 
-      float32_t x_0 = central_x - (((float) width / 2.0) * horizontal_resolution);
-      float32_t y_0 = central_y - (((float) height / 2.0) * vertical_resolution);
+      in.input_dtype = input_dtype;
+      in.data_input = data_input;
 
-      printf("Time: %f -> %f\n", time_min, time_max);
-
-      #pragma omp parallel for
-      for (int v=0; v<height; v++) {
-         for (int u=0; u<width; u++) {
-            int index = (height-v-1)*width + u;
-
-            float32_t cr_x = x_0 + ((float) u + 0.5) * horizontal_resolution;
-            float32_t cr_y = y_0 + ((float) v + 0.5) * vertical_resolution;
-
-            float32_t bl_x = cr_x - horizontal_sampling_offset;
-            float32_t bl_y = cr_y - vertical_sampling_offset;
-
-            float32_t tr_x = cr_x + horizontal_sampling_offset;
-            float32_t tr_y = cr_y + vertical_sampling_offset;
-
-            if (write_data) {
-
-               float32_t query_dimensions[] = {bl_x, tr_x, bl_y, tr_y, time_min, time_max};
-
-               result_set_t *current_result_set = query_tree(root_p, query_dimensions);
-               selected_reduction_function.call(current_result_set, &r_attrs, query_dimensions, data_input, data_output, index, input_dtype, output_dtype);
-               result_set_free(current_result_set);
-            }
-
-            if (write_lats || write_lons) {
-               // Get the central latitude and longitude for this cell, and store
-               projUV projection_input, projection_output;
-               projection_input.u = (tr_y + bl_y) / 2.0;
-               projection_input.v = (tr_x + bl_x) / 2.0;
-
-               projection_output = pj_inv(projection_input, projection);
-               if (write_lats) lats_output[index] = projection_output.v * RAD_TO_DEG;
-               if (write_lons) lons_output[index] = projection_output.u * RAD_TO_DEG;
-               #ifdef DEBUG
-               printf("(%d, %d) => (%f:%f, %f:%f)\n", u, v, bl_x, tr_x, bl_y, tr_y);
-               #endif
-            }
-         }
+      out.data_output = data_output;
+      out.lats_output = lats_output;
+      out.lons_output = lons_output;
+      out.output_dtype = output_dtype;
+      out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, projection);
+      if (out.grid_spec == NULL) {
+         fprintf(stderr, "Failed to initialise output grid\n");
+         return -1;
       }
-      end_time = time(NULL);
-      printf("Output image built.\n");
-      printf("Building image took %d seconds\n", (int) (end_time - start_time));
+      set_time_constraints(out.grid_spec, time_min, time_max);
+
+
+      // Perform gridding
+      int gridding_result = perform_gridding(in, out, selected_reduction_function, &r_attrs, root_p, verbosity);
+      if (!gridding_result) {
+         fprintf(stderr, "Gridding failed\n");
+         return -1;
+      }
+
 
       // Unmap and close files
       if (write_data) {
