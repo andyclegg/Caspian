@@ -3,22 +3,24 @@
 
 #include <proj_api.h>
 
-#include "result_set.h"
-#include "reduction_functions.h"
-#include "kd_tree.h"
-
 typedef struct {
    int width;
    int height;
-   float vres;
-   float hres;
+   float vertical_resolution;
+   float horizontal_resolution;
    float vsample;
    float hsample;
    float central_x;
    float central_y;
+   float horizontal_sampling_offset; // Better defined elsewhere?
+   float vertical_sampling_offset; // Better defined elsewhere?
+   float time_min;
+   float time_max;
    projPJ *projection;
 } grid;
 
-int perform_gridding(grid destination_grid, reduction_function reduce_func, tree *source_tree);
+grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projPJ *projection);
+void set_time_constraints(grid *output_grid, float min, float max);
+void free_grid(grid *tofree);
 
 #endif
