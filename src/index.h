@@ -10,7 +10,7 @@ typedef struct index_s{
    unsigned int num_elements;
    void (*write_to_file)(struct index_s *towrite, FILE *output_file);
    void (*free)(struct index_s *tofree);
-   result_set_t *(*query)(struct index_s *toquery, float *dimension_bounds);
+   result_set *(*query)(struct index_s *toquery, float *dimension_bounds);
 } index;
 
 #endif
