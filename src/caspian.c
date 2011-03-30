@@ -481,7 +481,7 @@ int main(int argc, char **argv) {
    }
 
 
-   // Free option strings
+   // Free option strings and working data
    free(input_data_filename);
    free(input_lat_filename);
    free(input_lon_filename);
@@ -489,10 +489,7 @@ int main(int argc, char **argv) {
    free(output_lat_filename);
    free(output_lon_filename);
    if (!using_default_projection_string) free(projection_string);
-
-   // Free working data
    data_index->free(data_index);
-   //pj_free(projection);
 
    return 0;
 }

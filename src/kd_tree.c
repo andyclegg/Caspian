@@ -465,6 +465,7 @@ void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
 void free_kdtree_index(index *tofree) {
    struct tree *tree_p = (struct tree *) tofree->data_structure;
    free_tree(tree_p);
+   pj_free(tofree->projection);
    free(tofree);
 }
 
@@ -546,16 +547,11 @@ index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
    projPJ *projection = reader->projection;
    struct tree *root_p;
 
-   printf("Building indices\n");
-   time_t start_time = time(NULL);
    int result = fill_tree_from_reader(&root_p, reader);
    if (!result) {
       fprintf(stderr, "Failed to build tree (%d)\n", result);
       return NULL;
    }
-   time_t end_time = time(NULL);
-   printf("Tree built\n");
-   printf("Building index took %d seconds\n", (int) (end_time - start_time));
 
    #ifdef DEBUG
    printf("Verifying tree\n");
