@@ -4,17 +4,17 @@
 #include "data_handling.h"
 #include "result_set.h"
 
-struct reduction_attrs {
+typedef struct {
    NUMERIC_WORKING_TYPE input_fill_value;
    NUMERIC_WORKING_TYPE output_fill_value;
-};
+} reduction_attrs;
 
 typedef struct {
    char* name;
    enum style_e type;
    void (*call)(
       result_set *set,
-      struct reduction_attrs *attrs,
+      reduction_attrs *attrs,
       float *dimension_bounds,
       void *input_data,
       void *output_data,
