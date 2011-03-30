@@ -13,7 +13,7 @@ typedef struct {
    char* name;
    enum style_e type;
    void (*call)(
-      result_set_t *set,
+      result_set *set,
       struct reduction_attrs *attrs,
       float *dimension_bounds,
       void *input_data,

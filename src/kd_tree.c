@@ -144,7 +144,7 @@ void free_tree(kdtree *tree_p) {
 }
 
 
-static void query_tree_at(kdtree *tree_p, float *dimension_bounds, result_set_t *results, unsigned int current_element) {
+static void query_tree_at(kdtree *tree_p, float *dimension_bounds, result_set *results, unsigned int current_element) {
    #ifdef DEBUG_KDTREE
    printf("Querying tree at %d\n", current_element);
    #endif
@@ -289,8 +289,8 @@ void verify_tree(kdtree *tree_p) {
   }
 }
 
-result_set_t *query_tree(index *toquery, float *dimension_bounds) {
-   result_set_t *results = result_set_init();
+result_set *query_tree(index *toquery, float *dimension_bounds) {
+   result_set *results = result_set_init();
    query_tree_at((kdtree *)(toquery->data_structure), dimension_bounds, results, 0);
    return results;
 }

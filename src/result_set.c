@@ -4,8 +4,8 @@
 
 #include "result_set.h"
 
-result_set_t *result_set_init() {
-   result_set_t *set = malloc(sizeof(result_set_t));
+result_set *result_set_init() {
+   result_set *set = malloc(sizeof(result_set));
    set->head = NULL;
    set->current = NULL;
    set->tail = NULL;
@@ -14,8 +14,8 @@ result_set_t *result_set_init() {
    return set;
 }
 
-void result_set_insert(result_set_t *set, float x, float y, float t, int record_index) {
-   struct result_set_item *new_item = malloc(sizeof(struct result_set_item));
+void result_set_insert(result_set *set, float x, float y, float t, int record_index) {
+   result_set_item *new_item = malloc(sizeof(result_set_item));
    new_item->x = x;
    new_item->y = y;
    new_item->t = t;
@@ -36,37 +36,37 @@ void result_set_insert(result_set_t *set, float x, float y, float t, int record_
    pthread_mutex_unlock(&set->write_lock);
 }
 
-void result_set_reset_iteration(result_set_t *set) {
+void result_set_reset_iteration(result_set *set) {
    set->current = set->head;
 }
 
-struct result_set_item *result_set_iterate(result_set_t *set) {
-   struct result_set_item *to_return = set->current;
+result_set_item *result_set_iterate(result_set *set) {
+   result_set_item *to_return = set->current;
    if (set->current != NULL) {
       set->current = set->current->next;
    }
    return to_return;
 }
 
-void result_set_free(result_set_t *set) {
+void result_set_free(result_set *set) {
    set->current = set->head;
    while (set->current != NULL) {
-      struct result_set_item *next = set->current->next;
+      result_set_item *next = set->current->next;
       free(set->current);
       set->current = next;
    }
    free(set);
 }
 
-void print_result_set(result_set_t *set) {
+void print_result_set(result_set *set) {
    printf("Results:\n");
    set->current = set->head;
-   struct result_set_item *current;
+   result_set_item *current;
    while ((current = result_set_iterate(set)) != NULL) {
       printf("%d @ (%f, %f)\n", current->record_index, current->x, current->y);
    }
 }
 
-unsigned int result_set_len(result_set_t *set) {
+unsigned int result_set_len(result_set *set) {
    return set->length;
 }

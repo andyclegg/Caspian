@@ -6,12 +6,12 @@
 #include "median.h"
 #include "reduction_functions.h"
 
-void reduce_numeric_mean(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_mean(result_set *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register NUMERIC_WORKING_TYPE current_sum = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value;
    register unsigned int current_number_of_values = 0;
 
-   struct result_set_item *current_item;
+   result_set_item *current_item;
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
@@ -28,7 +28,7 @@ void reduce_numeric_mean(result_set_t *set, struct reduction_attrs *attrs, float
    numeric_put(output_data, output_dtype, output_index, output_value);
 }
 
-void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_coded_nearest_neighbour(result_set *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float lowest_distance = FLT_MAX;
    void *best_value = malloc(input_dtype.size);
    register short int value_stored = 0;
@@ -36,7 +36,7 @@ void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *a
    float32_t central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
    float32_t central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
 
-   struct result_set_item *current_item;
+   result_set_item *current_item;
 
    register float current_distance;
    while ((current_item = result_set_iterate(set)) != NULL) {
@@ -60,12 +60,12 @@ void reduce_coded_nearest_neighbour(result_set_t *set, struct reduction_attrs *a
    free(best_value);
 }
 
-void reduce_numeric_newest(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_newest(result_set *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float latest = -FLT_MAX;
    register NUMERIC_WORKING_TYPE query_data_value;
    register NUMERIC_WORKING_TYPE newest_data_value = attrs->output_fill_value;
 
-   struct result_set_item *current_item;
+   result_set_item *current_item;
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
@@ -82,7 +82,7 @@ void reduce_numeric_newest(result_set_t *set, struct reduction_attrs *attrs, flo
    numeric_put(output_data, output_dtype, output_index, newest_data_value);
 }
 
-void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_median(result_set *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    unsigned int maximum_number_results = result_set_len(set); // maximum because some will be fill values
    unsigned int current_number_results = 0;
    register NUMERIC_WORKING_TYPE query_data_value;
@@ -90,7 +90,7 @@ void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, flo
    NUMERIC_WORKING_TYPE *values = calloc(sizeof(NUMERIC_WORKING_TYPE), maximum_number_results);
    if (values == NULL) { exit(1); }
 
-   struct result_set_item *current_item;
+   result_set_item *current_item;
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
@@ -108,14 +108,14 @@ void reduce_numeric_median(result_set_t *set, struct reduction_attrs *attrs, flo
    free(values);
 }
 
-void reduce_numeric_weighted_mean(result_set_t *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_weighted_mean(result_set *set, struct reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register NUMERIC_WORKING_TYPE current_sum = 0.0, total_distance = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value, current_distance; //Initialized on each loop
 
    NUMERIC_WORKING_TYPE central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
    NUMERIC_WORKING_TYPE central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
 
-   struct result_set_item *current_item;
+   result_set_item *current_item;
 
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
