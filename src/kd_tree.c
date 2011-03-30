@@ -10,6 +10,7 @@
 #include "kd_tree.h"
 #include "latlon_reader.h"
 #include "result_set.h"
+#include "index.h"
 
 #define LEFT_CHILD(index) (2*(index+1) - 1)
 #define RIGHT_CHILD(index) (2*(index+1))
@@ -17,6 +18,36 @@
 #define SQUARED(x) ((x)*(x))
 
 #define KDTREE_FILE_FORMAT 1
+
+void construct_tree(struct tree **tree_pp, unsigned int num_elements) {
+   size_t total_allocation = 0;
+   *tree_pp = malloc(sizeof(struct tree));
+   total_allocation += sizeof(struct tree);
+   struct tree *tree_p = *tree_pp;
+   float tree_number_of_leaf_elements = powf(2.0, ceilf(log2f((float) num_elements)));
+   float tree_number_of_elements_f = (2 * tree_number_of_leaf_elements) - 1;
+   unsigned int tree_number_of_elements = (unsigned int) fmax(tree_number_of_elements_f, 1.0);
+
+   #ifdef DEBUG_KDTREE
+   printf("Allocating a tree of size %d for %d leaf elements\n", tree_number_of_elements, num_elements);
+   #endif
+
+   tree_p->num_elements = num_elements;
+   tree_p->tree_num_nodes = tree_number_of_elements;
+
+   tree_p->tree_nodes = calloc(sizeof(struct tree_node), tree_number_of_elements);
+   total_allocation += sizeof(struct tree_node) * tree_number_of_elements;
+   for (unsigned int i=0; i<tree_number_of_elements; i++) {
+      tree_p->tree_nodes[i].tag = UNINITIALISED;
+   }
+
+   tree_p->observations = calloc(sizeof(struct observation), num_elements);
+   total_allocation += sizeof(struct observation) * num_elements;
+
+   #ifdef DEBUG_KDTREE
+   printf("construct_tree: Total allocation is %ld bytes\n", (long int) total_allocation);
+   #endif
+}
 
 void kdtree_save_to_file(FILE *output_file, struct tree *tree_p) {
    // Write the header to file
@@ -112,35 +143,6 @@ void free_tree(struct tree *tree_p) {
    free(tree_p);
 }
 
-void construct_tree(struct tree **tree_pp, unsigned int num_elements) {
-   size_t total_allocation = 0;
-   *tree_pp = malloc(sizeof(struct tree));
-   total_allocation += sizeof(struct tree);
-   struct tree *tree_p = *tree_pp;
-   float tree_number_of_leaf_elements = powf(2.0, ceilf(log2f((float) num_elements)));
-   float tree_number_of_elements_f = (2 * tree_number_of_leaf_elements) - 1;
-   unsigned int tree_number_of_elements = (unsigned int) fmax(tree_number_of_elements_f, 1.0);
-
-   #ifdef DEBUG_KDTREE
-   printf("Allocating a tree of size %d for %d leaf elements\n", tree_number_of_elements, num_elements);
-   #endif
-
-   tree_p->num_elements = num_elements;
-   tree_p->tree_num_nodes = tree_number_of_elements;
-
-   tree_p->tree_nodes = calloc(sizeof(struct tree_node), tree_number_of_elements);
-   total_allocation += sizeof(struct tree_node) * tree_number_of_elements;
-   for (unsigned int i=0; i<tree_number_of_elements; i++) {
-      tree_p->tree_nodes[i].tag = UNINITIALISED;
-   }
-
-   tree_p->observations = calloc(sizeof(struct observation), num_elements);
-   total_allocation += sizeof(struct observation) * num_elements;
-
-   #ifdef DEBUG_KDTREE
-   printf("construct_tree: Total allocation is %ld bytes\n", (long int) total_allocation);
-   #endif
-}
 
 static void query_tree_at(struct tree *tree_p, float *dimension_bounds, result_set_t *results, unsigned int current_element) {
    #ifdef DEBUG_KDTREE
@@ -287,12 +289,11 @@ void verify_tree(struct tree *tree_p) {
   }
 }
 
-result_set_t *query_tree(struct tree *tree_p, float *dimension_bounds) {
+result_set_t *query_tree(index *toquery, float *dimension_bounds) {
    result_set_t *results = result_set_init();
-   query_tree_at(tree_p, dimension_bounds, results, 0);
+   query_tree_at((struct tree *)(toquery->data_structure), dimension_bounds, results, 0);
    return results;
 }
-
 
 static int compare_observations(const void* a, const void* b, short int comparison_dimension) {
    struct observation *t_a = (struct observation *) a;
@@ -421,6 +422,7 @@ int fill_tree_from_reader(struct tree **tree_pp, latlon_reader_t *reader) {
    //Construct the tree
    construct_tree(tree_pp, no_elements);
    struct tree *tree_p = *tree_pp;
+   tree_p->projection = reader->projection;
 
    struct observation *observations = tree_p->observations;
 
@@ -438,4 +440,144 @@ int fill_tree_from_reader(struct tree **tree_pp, latlon_reader_t *reader) {
    recursive_build_kd_tree(tree_p, 0, no_elements - 1, 0, -1);
    return 1;
 }
+
+void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
+   struct tree *tree_p = (struct tree *) towrite->data_structure;
+   projPJ *projection = tree_p->projection;
+
+   // Write the header to file
+   unsigned int file_format_number = KDTREE_FILE_FORMAT;
+   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
+
+   // Write the projection string length and string to file
+   char *projection_string = pj_get_def(projection, 0);
+   unsigned int projection_string_length = strlen(projection_string) + 1;
+   fwrite(&projection_string_length, sizeof(unsigned int), 1, output_file);
+   fwrite(projection_string, sizeof(char), projection_string_length, output_file);
+
+   // Write the tree to file
+   kdtree_save_to_file(output_file, tree_p);
+
+   // Write a concluding header
+   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
+}
+
+void free_kdtree_index(index *tofree) {
+   struct tree *tree_p = (struct tree *) tofree->data_structure;
+   free_tree(tree_p);
+   free(tofree);
+}
+
+index *read_kdtree_index_from_file(FILE *input_file) {
+   // Read and check the header
+   unsigned int file_format_number;
+   unsigned int projection_string_length;
+   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
+   fread(&projection_string_length, sizeof(unsigned int), 1, input_file);
+
+   if (file_format_number != KDTREE_FILE_FORMAT) {
+      fprintf(stderr, "Wrong disk file format (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
+      exit(-1);
+   }
+
+   // Read the projection string
+   char *projection_string = calloc(projection_string_length, sizeof(char));
+   if (projection_string == NULL) {
+      fprintf(stderr, "Failed to allocate space (%d chars) for projection string\n", projection_string_length);
+      exit(-1);
+   }
+   fread(projection_string, sizeof(char), projection_string_length, input_file);
+
+   // Paranoid checks on projection string
+   if (projection_string[projection_string_length-1] != '\0') {
+      fprintf(stderr, "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n", projection_string_length, projection_string[projection_string_length - 1]);
+      // Don't attempt to print out the projection string as we know it's
+      // corrupt - very bad things may happen!
+      exit(-1);
+   }
+   if (strlen(projection_string) != projection_string_length -1) {
+      fprintf(stderr, "Corrupted string read from file (string length is wrong)\n");
+      // Don't attempt to print out the projection string as we know it's
+      // corrupt - very bad things may happen!
+      exit(-1);
+   }
+
+   // Initialize the projection
+   projPJ *projection = pj_init_plus(projection_string);
+   if (projection == NULL) {
+      fprintf(stderr, "Critical: Couldn't initialize projection\n");
+      exit(-1);
+   }
+
+   // Read kdtree
+   struct tree *tree_p = kdtree_read_from_file(input_file);
+
+   // Check concluding header
+   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
+   if (file_format_number != KDTREE_FILE_FORMAT) {
+      fprintf(stderr, "Wrong concluding header (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
+      exit(-1);
+   }
+
+   #ifdef DEBUG
+   printf("Verifying tree\n");
+   verify_tree(tree_p);
+   printf("Tree verified as correct\n");
+   #endif
+
+   // Turn this into an index
+   index *output_index = malloc(sizeof(index));
+   if (output_index == NULL) {
+      fprintf(stderr, "Failed to allocate space for index\n");
+      return NULL;
+   }
+
+   output_index->data_structure = tree_p;
+   output_index->projection = projection;
+   output_index->num_elements = tree_p->num_elements;
+   output_index->write_to_file = &write_kdtree_index_to_file;
+   output_index->free = &free_kdtree_index;
+   output_index->query = &query_tree;
+
+   return output_index;
+}
+
+index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
+   projPJ *projection = reader->projection;
+   struct tree *root_p;
+
+   printf("Building indices\n");
+   time_t start_time = time(NULL);
+   int result = fill_tree_from_reader(&root_p, reader);
+   if (!result) {
+      fprintf(stderr, "Failed to build tree (%d)\n", result);
+      return NULL;
+   }
+   time_t end_time = time(NULL);
+   printf("Tree built\n");
+   printf("Building index took %d seconds\n", (int) (end_time - start_time));
+
+   #ifdef DEBUG
+   printf("Verifying tree\n");
+   verify_tree(root_p);
+   printf("Tree verified as correct\n");
+   #endif
+
+   // Compile this into an index
+   index *output_index = malloc(sizeof(index));
+   if (output_index == NULL) {
+      fprintf(stderr, "Failed to allocate space for index\n");
+      return NULL;
+   }
+
+   output_index->data_structure = root_p;
+   output_index->projection = projection;
+   output_index->num_elements = root_p->num_elements;
+   output_index->write_to_file = &write_kdtree_index_to_file;
+   output_index->free = &free_kdtree_index;
+   output_index->query = &query_tree;
+
+   return output_index;
+}
+
 
