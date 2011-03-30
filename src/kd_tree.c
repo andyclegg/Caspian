@@ -19,11 +19,11 @@
 
 #define KDTREE_FILE_FORMAT 1
 
-void construct_tree(struct tree **tree_pp, unsigned int num_elements) {
+void construct_tree(kdtree **tree_pp, unsigned int num_elements) {
    size_t total_allocation = 0;
-   *tree_pp = malloc(sizeof(struct tree));
-   total_allocation += sizeof(struct tree);
-   struct tree *tree_p = *tree_pp;
+   *tree_pp = malloc(sizeof(kdtree));
+   total_allocation += sizeof(kdtree);
+   kdtree *tree_p = *tree_pp;
    float tree_number_of_leaf_elements = powf(2.0, ceilf(log2f((float) num_elements)));
    float tree_number_of_elements_f = (2 * tree_number_of_leaf_elements) - 1;
    unsigned int tree_number_of_elements = (unsigned int) fmax(tree_number_of_elements_f, 1.0);
@@ -35,21 +35,21 @@ void construct_tree(struct tree **tree_pp, unsigned int num_elements) {
    tree_p->num_elements = num_elements;
    tree_p->tree_num_nodes = tree_number_of_elements;
 
-   tree_p->tree_nodes = calloc(sizeof(struct tree_node), tree_number_of_elements);
-   total_allocation += sizeof(struct tree_node) * tree_number_of_elements;
+   tree_p->tree_nodes = calloc(sizeof(kdtree_node), tree_number_of_elements);
+   total_allocation += sizeof(kdtree_node) * tree_number_of_elements;
    for (unsigned int i=0; i<tree_number_of_elements; i++) {
       tree_p->tree_nodes[i].tag = UNINITIALISED;
    }
 
-   tree_p->observations = calloc(sizeof(struct observation), num_elements);
-   total_allocation += sizeof(struct observation) * num_elements;
+   tree_p->observations = calloc(sizeof(observation), num_elements);
+   total_allocation += sizeof(observation) * num_elements;
 
    #ifdef DEBUG_KDTREE
    printf("construct_tree: Total allocation is %ld bytes\n", (long int) total_allocation);
    #endif
 }
 
-void kdtree_save_to_file(FILE *output_file, struct tree *tree_p) {
+void kdtree_save_to_file(FILE *output_file, kdtree *tree_p) {
    // Write the header to file
    unsigned int file_format_number = KDTREE_FILE_FORMAT;
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
@@ -57,14 +57,14 @@ void kdtree_save_to_file(FILE *output_file, struct tree *tree_p) {
    fwrite(&tree_p->tree_num_nodes, sizeof(unsigned int), 1, output_file);
 
    // Write the data to file
-   fwrite(tree_p->tree_nodes, sizeof(struct tree_node), tree_p->tree_num_nodes, output_file);
-   fwrite(tree_p->observations, sizeof(struct observation), tree_p->num_elements, output_file);
+   fwrite(tree_p->tree_nodes, sizeof(kdtree_node), tree_p->tree_num_nodes, output_file);
+   fwrite(tree_p->observations, sizeof(observation), tree_p->num_elements, output_file);
 
    // Write an end of file marker for paranoia
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
 }
 
-struct tree *kdtree_read_from_file(FILE *input_file) {
+kdtree *kdtree_read_from_file(FILE *input_file) {
    // Read and check the header
    unsigned int file_format_number;
    unsigned int num_elements;
@@ -79,7 +79,7 @@ struct tree *kdtree_read_from_file(FILE *input_file) {
    }
 
    // Create tree
-   struct tree *tree_p;
+   kdtree *tree_p;
    construct_tree(&tree_p, num_elements);
 
    // Check the computed number of tree nodes against the number read from file
@@ -89,8 +89,8 @@ struct tree *kdtree_read_from_file(FILE *input_file) {
    }
 
    // Read the data into the tree
-   fread(tree_p->tree_nodes, sizeof(struct tree_node), tree_p->tree_num_nodes, input_file);
-   fread(tree_p->observations, sizeof(struct observation), tree_p->num_elements, input_file);
+   fread(tree_p->tree_nodes, sizeof(kdtree_node), tree_p->tree_num_nodes, input_file);
+   fread(tree_p->observations, sizeof(observation), tree_p->num_elements, input_file);
 
    // Paranoidly check the end of file header
    fread(&file_format_number, sizeof(unsigned int), 1, input_file);
@@ -103,7 +103,7 @@ struct tree *kdtree_read_from_file(FILE *input_file) {
    return tree_p;
 }
 
-static void inspect_tree_node(struct tree *tree_p, unsigned int current_index, int indent) {
+static void inspect_tree_node(kdtree *tree_p, unsigned int current_index, int indent) {
    printf("%d", current_index);
    for (int i=1; i<=indent; i++) {
       if (i==indent) {
@@ -113,7 +113,7 @@ static void inspect_tree_node(struct tree *tree_p, unsigned int current_index, i
       }
    }
 
-   struct tree_node *cur_node = &tree_p->tree_nodes[current_index];
+   kdtree_node *cur_node = &tree_p->tree_nodes[current_index];
    if (cur_node->tag == TERMINAL) {
       printf("Terminal Node [Data Node %d] (%f, %f, %d)\n",
          cur_node->data.observation_index,
@@ -132,27 +132,27 @@ static void inspect_tree_node(struct tree *tree_p, unsigned int current_index, i
    inspect_tree_node(tree_p, RIGHT_CHILD(current_index), indent + 1);
 }
 
-void inspect_tree(struct tree *tree_p) {
+void inspect_tree(kdtree *tree_p) {
    printf("Inspecting tree at %ld (%d elements)\n", (long) tree_p, tree_p->num_elements);
    inspect_tree_node(tree_p, 0, 0);
 }
 
-void free_tree(struct tree *tree_p) {
+void free_tree(kdtree *tree_p) {
    free(tree_p->tree_nodes);
    free(tree_p->observations);
    free(tree_p);
 }
 
 
-static void query_tree_at(struct tree *tree_p, float *dimension_bounds, result_set_t *results, unsigned int current_element) {
+static void query_tree_at(kdtree *tree_p, float *dimension_bounds, result_set_t *results, unsigned int current_element) {
    #ifdef DEBUG_KDTREE
    printf("Querying tree at %d\n", current_element);
    #endif
 
-   struct tree_node *current_node = &tree_p->tree_nodes[current_element];
+   kdtree_node *current_node = &tree_p->tree_nodes[current_element];
 
    if (current_node->tag == TERMINAL) {
-      struct observation *current_observation = &tree_p->observations[current_node->data.observation_index];
+      observation *current_observation = &tree_p->observations[current_node->data.observation_index];
       if (
          (current_observation->dimensions[Y] >= dimension_bounds[2*Y + LOWER]) &&
          (current_observation->dimensions[Y] <= dimension_bounds[2*Y + UPPER]) &&
@@ -206,8 +206,8 @@ static void query_tree_at(struct tree *tree_p, float *dimension_bounds, result_s
    };
 };
 
-struct observation *nearest_neighbour_recursive(struct tree *tree_p, float *target_point, unsigned int tree_index) {
-   struct tree_node *current_node = &tree_p->tree_nodes[tree_index];
+observation *nearest_neighbour_recursive(kdtree *tree_p, float *target_point, unsigned int tree_index) {
+   kdtree_node *current_node = &tree_p->tree_nodes[tree_index];
    if (current_node->tag == TERMINAL) {
       return &tree_p->observations[current_node->data.observation_index];
    } else { // Non-terminal
@@ -215,14 +215,14 @@ struct observation *nearest_neighbour_recursive(struct tree *tree_p, float *targ
       float pivot_target_distance = current_node->data.discriminator - target_point[current_node->tag];
 
       // Search the 'near' branch
-      struct observation *best = nearest_neighbour_recursive(tree_p, target_point, (pivot_target_distance > 0) ? LEFT_CHILD(tree_index) : RIGHT_CHILD(tree_index));
+      observation *best = nearest_neighbour_recursive(tree_p, target_point, (pivot_target_distance > 0) ? LEFT_CHILD(tree_index) : RIGHT_CHILD(tree_index));
 
       // Only search the 'away' branch if the squared distance between the current best and the target is greater
       // Than the squared distance between the target and the branch pivot
       float current_best_squared_distance = SQUARED(best->dimensions[X] - target_point[X]) + SQUARED(best->dimensions[Y] - target_point[Y]);
       if (current_best_squared_distance > SQUARED(pivot_target_distance)) {
          // Search the 'away' branch
-         struct observation *potential_best = nearest_neighbour_recursive(tree_p, target_point, (pivot_target_distance > 0) ? RIGHT_CHILD(tree_index) : LEFT_CHILD(tree_index));
+         observation *potential_best = nearest_neighbour_recursive(tree_p, target_point, (pivot_target_distance > 0) ? RIGHT_CHILD(tree_index) : LEFT_CHILD(tree_index));
          // Is potential best better than best?
          float potential_best_squared_distance = SQUARED(potential_best->dimensions[X] - target_point[X]) + SQUARED(potential_best->dimensions[Y] - target_point[Y]);
          if (potential_best_squared_distance < current_best_squared_distance) {
@@ -234,18 +234,18 @@ struct observation *nearest_neighbour_recursive(struct tree *tree_p, float *targ
    }
 }
 
-struct observation *nearest_neighbour(struct tree *tree_p, float *target_point) {
+observation *nearest_neighbour(kdtree *tree_p, float *target_point) {
    return nearest_neighbour_recursive(tree_p, target_point, 0);
 }
 
 
-void verify_tree(struct tree *tree_p) {
+void verify_tree(kdtree *tree_p) {
    unsigned int start_of_leaves = (tree_p->tree_num_nodes + 1) / 2;
 
    for (unsigned int current_leaf_element = start_of_leaves;
          current_leaf_element < tree_p->tree_num_nodes;
          current_leaf_element++) {
-      struct tree_node *current_tree_node = &tree_p->tree_nodes[current_leaf_element];
+      kdtree_node *current_tree_node = &tree_p->tree_nodes[current_leaf_element];
       if (current_tree_node->tag == UNINITIALISED) {
          continue;
       }
@@ -291,13 +291,13 @@ void verify_tree(struct tree *tree_p) {
 
 result_set_t *query_tree(index *toquery, float *dimension_bounds) {
    result_set_t *results = result_set_init();
-   query_tree_at((struct tree *)(toquery->data_structure), dimension_bounds, results, 0);
+   query_tree_at((kdtree *)(toquery->data_structure), dimension_bounds, results, 0);
    return results;
 }
 
 static int compare_observations(const void* a, const void* b, short int comparison_dimension) {
-   struct observation *t_a = (struct observation *) a;
-   struct observation *t_b = (struct observation *) b;
+   observation *t_a = (observation *) a;
+   observation *t_b = (observation *) b;
    if (t_a->dimensions[comparison_dimension] < t_b->dimensions[comparison_dimension]) {
       return -1;
    }
@@ -312,14 +312,14 @@ static int compare_longitudes(const void* a, const void* b) {
    return compare_observations(a, b, X);
 }
 
-static int recursive_build_kd_tree(struct tree *tree_p,unsigned int first_element,unsigned int last_element,unsigned int current_tree_index, short int current_sort_dimension) {
+static int recursive_build_kd_tree(kdtree *tree_p,unsigned int first_element,unsigned int last_element,unsigned int current_tree_index, short int current_sort_dimension) {
 
    #ifdef DEBUG_KDTREE
    printf("->Entering recursive_build_kd_tree\ncurrent_tree_index = %d\nfirst_element = %d\nlast_element = %d\n", current_tree_index, first_element, last_element);
    #endif
 
-   struct observation *observations = tree_p->observations;
-   struct tree_node *current_element = &tree_p->tree_nodes[current_tree_index];
+   observation *observations = tree_p->observations;
+   kdtree_node *current_element = &tree_p->tree_nodes[current_tree_index];
 
    //Choose the axis that varies most in observations[first_element:last_element], then fill out current_tree_index's children, and call itself recursively
    //bottom out when first_element == last_element, then build the data section of the tree
@@ -370,7 +370,7 @@ static int recursive_build_kd_tree(struct tree *tree_p,unsigned int first_elemen
          printf("Calling qsort from %d [%ld] with %d elements\n", first_element, (long int) &observations[first_element], last_element - first_element);
          #endif
 
-         qsort(&observations[first_element], last_element - first_element + 1, sizeof(struct observation), comparison_function);
+         qsort(&observations[first_element], last_element - first_element + 1, sizeof(observation), comparison_function);
       }
 
       if (((last_element - first_element) % 2) != 0) {
@@ -415,16 +415,16 @@ static int recursive_build_kd_tree(struct tree *tree_p,unsigned int first_elemen
    return 0;
 }
 
-int fill_tree_from_reader(struct tree **tree_pp, latlon_reader_t *reader) {
+int fill_tree_from_reader(kdtree **tree_pp, latlon_reader_t *reader) {
 
    unsigned int no_elements = latlon_reader_get_num_records(reader);
 
    //Construct the tree
    construct_tree(tree_pp, no_elements);
-   struct tree *tree_p = *tree_pp;
+   kdtree *tree_p = *tree_pp;
    tree_p->projection = reader->projection;
 
-   struct observation *observations = tree_p->observations;
+   observation *observations = tree_p->observations;
 
    register int result;
    for(int current_index = 0; current_index < no_elements; current_index++) {
@@ -442,7 +442,7 @@ int fill_tree_from_reader(struct tree **tree_pp, latlon_reader_t *reader) {
 }
 
 void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
-   struct tree *tree_p = (struct tree *) towrite->data_structure;
+   kdtree *tree_p = (kdtree *) towrite->data_structure;
    projPJ *projection = tree_p->projection;
 
    // Write the header to file
@@ -463,7 +463,7 @@ void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
 }
 
 void free_kdtree_index(index *tofree) {
-   struct tree *tree_p = (struct tree *) tofree->data_structure;
+   kdtree *tree_p = (kdtree *) tofree->data_structure;
    free_tree(tree_p);
    pj_free(tofree->projection);
    free(tofree);
@@ -511,7 +511,7 @@ index *read_kdtree_index_from_file(FILE *input_file) {
    }
 
    // Read kdtree
-   struct tree *tree_p = kdtree_read_from_file(input_file);
+   kdtree *tree_p = kdtree_read_from_file(input_file);
 
    // Check concluding header
    fread(&file_format_number, sizeof(unsigned int), 1, input_file);
@@ -545,7 +545,7 @@ index *read_kdtree_index_from_file(FILE *input_file) {
 
 index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
    projPJ *projection = reader->projection;
-   struct tree *root_p;
+   kdtree *root_p;
 
    int result = fill_tree_from_reader(&root_p, reader);
    if (!result) {
