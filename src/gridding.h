@@ -7,7 +7,8 @@
 #include "kd_tree.h"
 #include "reduction_functions.h"
 #include "result_set.h"
+#include "index.h"
 
-int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, struct reduction_attrs *attrs, struct tree *source_tree, int verbose);
+int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, struct reduction_attrs *attrs, index *data_index, int verbose);
 
 #endif

@@ -20,81 +20,8 @@
 #include "grid.h"
 #include "gridding.h"
 
-#define GRIDGEN_FILE_FORMAT 1
 #define WGS84_POLAR_CIRCUMFERENCE 40007863.0
 #define WGS84_EQUATORIAL_CIRCUMFERENCE 40075017.0
-
-void write_index_to_file(FILE *output_file, struct tree *tree_p, projPJ *projection) {
-   // Write the header to file
-   unsigned int file_format_number = GRIDGEN_FILE_FORMAT;
-   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
-
-   // Write the projection string length and string to file
-   char *projection_string = pj_get_def(projection, 0);
-   unsigned int projection_string_length = strlen(projection_string) + 1;
-   fwrite(&projection_string_length, sizeof(unsigned int), 1, output_file);
-   fwrite(projection_string, sizeof(char), projection_string_length, output_file);
-
-   // Write the tree to file
-   kdtree_save_to_file(output_file, tree_p);
-
-   // Write a concluding header
-   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
-}
-
-void read_index_from_file(FILE *input_file, struct tree **tree_p, projPJ *projection) {
-   // Read and check the header
-   unsigned int file_format_number;
-   unsigned int projection_string_length;
-   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
-   fread(&projection_string_length, sizeof(unsigned int), 1, input_file);
-
-   if (file_format_number != GRIDGEN_FILE_FORMAT) {
-      fprintf(stderr, "Wrong disk file format (read %d, expected %d)\n", file_format_number, GRIDGEN_FILE_FORMAT);
-      exit(-1);
-   }
-
-   // Read the projection string
-   char *projection_string = calloc(projection_string_length, sizeof(char));
-   if (projection_string == NULL) {
-      fprintf(stderr, "Failed to allocate space (%d chars) for projection string\n", projection_string_length);
-      exit(-1);
-   }
-   fread(projection_string, sizeof(char), projection_string_length, input_file);
-
-   // Paranoid checks on projection string
-   if (projection_string[projection_string_length-1] != '\0') {
-      fprintf(stderr, "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n", projection_string_length, projection_string[projection_string_length - 1]);
-      // Don't attempt to print out the projection string as we know it's
-      // corrupt - very bad things may happen!
-      exit(-1);
-   }
-   if (strlen(projection_string) != projection_string_length -1) {
-      fprintf(stderr, "Corrupted string read from file (string length is wrong)\n");
-      // Don't attempt to print out the projection string as we know it's
-      // corrupt - very bad things may happen!
-      exit(-1);
-   }
-
-   // Initialize the projection
-   projection = pj_init_plus(projection_string);
-   if (projection == NULL) {
-      fprintf(stderr, "Critical: Couldn't initialize projection\n");
-      exit(-1);
-   }
-
-   // Read kdtree
-   *tree_p = kdtree_read_from_file(input_file);
-
-   // Check concluding header
-   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
-   if (file_format_number != GRIDGEN_FILE_FORMAT) {
-      fprintf(stderr, "Wrong concluding header (read %d, expected %d)\n", file_format_number, GRIDGEN_FILE_FORMAT);
-      exit(-1);
-   }
-
-   // Done! :-)
-}
 
 void help(char *prog) {
    printf("Usage: %s <options>\n", basename(prog));
@@ -401,17 +328,16 @@ int main(int argc, char **argv) {
    r_attrs.input_fill_value = input_fill_value;
    r_attrs.output_fill_value = output_fill_value;
 
-   projPJ *projection = NULL;
-   struct tree *root_p;
+   index *data_index = NULL;
 
    if (loading_index) {
       // Read from disk
       FILE *input_index_file = fopen(input_index_filename, "r");
-      read_index_from_file(input_index_file, &root_p, projection);
+      data_index = read_kdtree_index_from_file(input_index_file);
       fclose(input_index_file);
    } else {
       // Initialize the projection
-      projection = pj_init_plus(projection_string);
+      projPJ *projection = pj_init_plus(projection_string);
       if (projection == NULL) {
          fprintf(stderr, "Critical: Couldn't initialize projection\n");
          return -1;
@@ -426,13 +352,12 @@ int main(int argc, char **argv) {
 
       printf("Building indices\n");
       start_time = time(NULL);
-      int result = fill_tree_from_reader(&root_p, reader);
-      if (!result) {
-         printf("Failed to build tree\n");
-         return result;
+      data_index = generate_kdtree_index_from_latlon_reader(reader);
+      if (!data_index) {
+         fprintf(stderr, "Failed to build index\n");
+         return -1;
       }
       end_time = time(NULL);
-      printf("Tree built\n");
       printf("Building index took %d seconds\n", (int) (end_time - start_time));
 
       latlon_reader_free(reader);
@@ -440,19 +365,14 @@ int main(int argc, char **argv) {
       if (saving_index) {
          // Save to disk
          FILE *output_index_file = fopen(output_index_filename, "w");
-         write_index_to_file(output_index_file, root_p, projection);
+         data_index->write_to_file(data_index, output_index_file);
          fclose(output_index_file);
       }
    }
 
-
-   printf("Verifying tree\n");
-   verify_tree(root_p);
-   printf("Tree verified as correct\n");
-
    if (generating_image) {
 
-      unsigned int input_data_number_bytes = root_p->num_elements * input_dtype.size;
+      unsigned int input_data_number_bytes = data_index->num_elements * input_dtype.size;
       unsigned int output_data_number_bytes = width * height * output_dtype.size;
       unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
       mode_t creation_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
@@ -527,7 +447,7 @@ int main(int argc, char **argv) {
       out.lats_output = lats_output;
       out.lons_output = lons_output;
       out.output_dtype = output_dtype;
-      out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, projection);
+      out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->projection);
       if (out.grid_spec == NULL) {
          fprintf(stderr, "Failed to initialise output grid\n");
          return -1;
@@ -536,7 +456,7 @@ int main(int argc, char **argv) {
 
 
       // Perform gridding
-      int gridding_result = perform_gridding(in, out, selected_reduction_function, &r_attrs, root_p, verbosity);
+      int gridding_result = perform_gridding(in, out, selected_reduction_function, &r_attrs, data_index, verbosity);
       if (!gridding_result) {
          fprintf(stderr, "Gridding failed\n");
          return -1;
@@ -571,8 +491,8 @@ int main(int argc, char **argv) {
    if (!using_default_projection_string) free(projection_string);
 
    // Free working data
-   free_tree(root_p);
-   pj_free(projection);
+   data_index->free(data_index);
+   //pj_free(projection);
 
    return 0;
 }

@@ -4,7 +4,7 @@
 #include "gridding.h"
 #include "io_spec.h"
 
-int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, struct reduction_attrs *attrs, struct tree *source_tree, int verbose) {
+int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, struct reduction_attrs *attrs, index *data_index, int verbose) {
 
    if (verbose) printf("Building output image\n");
    time_t start_time = time(NULL);
@@ -30,7 +30,7 @@ int perform_gridding(input_spec inspec, output_spec outspec, reduction_function 
          if (outspec.data_output != NULL) {
             float32_t query_dimensions[] = {bl_x, tr_x, bl_y, tr_y, outspec.grid_spec->time_min, outspec.grid_spec->time_max};
 
-            result_set_t *current_result_set = query_tree(source_tree, query_dimensions);
+            result_set_t *current_result_set = data_index->query(data_index, query_dimensions);
             reduce_func.call(current_result_set, attrs, query_dimensions, inspec.data_input, outspec.data_output, index, inspec.input_dtype, outspec.output_dtype);
             result_set_free(current_result_set);
          }
