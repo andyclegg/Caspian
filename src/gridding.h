@@ -9,6 +9,6 @@
 #include "result_set.h"
 #include "index.h"
 
-int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, struct reduction_attrs *attrs, index *data_index, int verbose);
+int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, index *data_index, int verbose);
 
 #endif

@@ -324,7 +324,7 @@ int main(int argc, char **argv) {
 
 
    // Reduction options
-   struct reduction_attrs r_attrs;
+   reduction_attrs r_attrs;
    r_attrs.input_fill_value = input_fill_value;
    r_attrs.output_fill_value = output_fill_value;
 
