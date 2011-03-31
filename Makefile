@@ -7,7 +7,7 @@ all: caspian debug docs projcalc quickview
 caspian: bin/caspian
 projcalc: bin/projcalc
 debug: bin/caspian-debug
-docs: doc/caspian.pdf
+docs: doc/caspian.pdf doc/html/index.html
 quickview: bin/quickview
 
 bin/projcalc: src/projection_calculator.c
@@ -22,6 +22,9 @@ bin/caspian-debug: $(SOURCE_FILES)
 doc/caspian.pdf: src/doc/caspian.tex
 	latexmk -cd $? -pdfdvi
 	cp -f src/doc/caspian.pdf doc/caspian.pdf
+
+doc/html/index.html: src/*
+	doxygen src/Doxyfile
 
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
