@@ -334,7 +334,7 @@ static int recursive_build_kd_tree(kdtree *tree_p,unsigned int first_element,uns
       float lon_min = FLT_MAX;
       float lat_max = -FLT_MAX;
       float lon_max = -FLT_MAX;
-      for (int current_index = first_element; current_index <= last_element; current_index++) {
+      for (unsigned int current_index = first_element; current_index <= last_element; current_index++) {
          lat_min = fmin(lat_min, observations[current_index].dimensions[Y]);
          lon_min = fmin(lon_min, observations[current_index].dimensions[X]);
          lat_max = fmax(lat_max, observations[current_index].dimensions[Y]);
@@ -426,7 +426,7 @@ int fill_tree_from_reader(kdtree **tree_pp, latlon_reader_t *reader) {
    observation *observations = tree_p->observations;
 
    register int result;
-   for(int current_index = 0; current_index < no_elements; current_index++) {
+   for(unsigned int current_index = 0; current_index < no_elements; current_index++) {
       observations[current_index].file_record_index = current_index;
       result = latlon_reader_read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y], &observations[current_index].dimensions[T]);
       if (!result) {
