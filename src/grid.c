@@ -1,7 +1,11 @@
+#include <stdlib.h>
+#include <math.h>
+
 #include "grid.h"
 #include "data_handling.h"
 
-grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projPJ *projection) {
+
+grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projector *input_projector) {
    grid *result = malloc(sizeof(grid));
    if (result == NULL) {
       return NULL;
@@ -16,7 +20,7 @@ grid *initialise_grid(int width, int height, float vertical_resolution, float ho
    result->hsample = hsample;
    result->central_x = central_x;
    result->central_y = central_y;
-   result->projection = projection;
+   result->input_projector = input_projector;
    result->time_min = -INFINITY;
    result->time_max = +INFINITY;
 
@@ -32,7 +36,7 @@ grid *initialise_grid(int width, int height, float vertical_resolution, float ho
       result->vertical_sampling_offset = vsample / 2.0;
    }
 
-   result->projection = projection;
+   result->input_projector = input_projector;
 
    return result;
 }

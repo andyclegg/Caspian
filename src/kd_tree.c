@@ -1,7 +1,6 @@
 #include <errno.h>
 #include <float.h>
 #include <math.h>
-#include <proj_api.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -422,7 +421,7 @@ int fill_tree_from_reader(kdtree **tree_pp, latlon_reader_t *reader) {
    //Construct the tree
    construct_tree(tree_pp, no_elements);
    kdtree *tree_p = *tree_pp;
-   tree_p->projection = reader->projection;
+   tree_p->input_projector = reader->input_projector;
 
    observation *observations = tree_p->observations;
 
@@ -443,17 +442,13 @@ int fill_tree_from_reader(kdtree **tree_pp, latlon_reader_t *reader) {
 
 void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
    kdtree *tree_p = (kdtree *) towrite->data_structure;
-   projPJ *projection = tree_p->projection;
 
    // Write the header to file
    unsigned int file_format_number = KDTREE_FILE_FORMAT;
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
 
-   // Write the projection string length and string to file
-   char *projection_string = pj_get_def(projection, 0);
-   unsigned int projection_string_length = strlen(projection_string) + 1;
-   fwrite(&projection_string_length, sizeof(unsigned int), 1, output_file);
-   fwrite(projection_string, sizeof(char), projection_string_length, output_file);
+   // Serialize the projector to the file
+   tree_p->input_projector->serialize_to_file(tree_p->input_projector, output_file);
 
    // Write the tree to file
    kdtree_save_to_file(output_file, tree_p);
@@ -465,48 +460,23 @@ void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
 void free_kdtree_index(index *tofree) {
    kdtree *tree_p = (kdtree *) tofree->data_structure;
    free_tree(tree_p);
-   pj_free(tofree->projection);
    free(tofree);
 }
 
 index *read_kdtree_index_from_file(FILE *input_file) {
    // Read and check the header
    unsigned int file_format_number;
-   unsigned int projection_string_length;
    fread(&file_format_number, sizeof(unsigned int), 1, input_file);
-   fread(&projection_string_length, sizeof(unsigned int), 1, input_file);
 
    if (file_format_number != KDTREE_FILE_FORMAT) {
       fprintf(stderr, "Wrong disk file format (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
       exit(-1);
    }
 
-   // Read the projection string
-   char *projection_string = calloc(projection_string_length, sizeof(char));
-   if (projection_string == NULL) {
-      fprintf(stderr, "Failed to allocate space (%d chars) for projection string\n", projection_string_length);
-      exit(-1);
-   }
-   fread(projection_string, sizeof(char), projection_string_length, input_file);
-
-   // Paranoid checks on projection string
-   if (projection_string[projection_string_length-1] != '\0') {
-      fprintf(stderr, "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n", projection_string_length, projection_string[projection_string_length - 1]);
-      // Don't attempt to print out the projection string as we know it's
-      // corrupt - very bad things may happen!
-      exit(-1);
-   }
-   if (strlen(projection_string) != projection_string_length -1) {
-      fprintf(stderr, "Corrupted string read from file (string length is wrong)\n");
-      // Don't attempt to print out the projection string as we know it's
-      // corrupt - very bad things may happen!
-      exit(-1);
-   }
-
-   // Initialize the projection
-   projPJ *projection = pj_init_plus(projection_string);
-   if (projection == NULL) {
-      fprintf(stderr, "Critical: Couldn't initialize projection\n");
+   // Get the projector from the file
+   projector *input_projector = get_proj_projector_from_file(input_file);
+   if (input_projector == NULL) {
+      fprintf(stderr, "Couldn't obtain input projection from file\n");
       exit(-1);
    }
 
@@ -534,7 +504,7 @@ index *read_kdtree_index_from_file(FILE *input_file) {
    }
 
    output_index->data_structure = tree_p;
-   output_index->projection = projection;
+   output_index->input_projector = input_projector;
    output_index->num_elements = tree_p->num_elements;
    output_index->write_to_file = &write_kdtree_index_to_file;
    output_index->free = &free_kdtree_index;
@@ -544,7 +514,6 @@ index *read_kdtree_index_from_file(FILE *input_file) {
 }
 
 index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
-   projPJ *projection = reader->projection;
    kdtree *root_p;
 
    int result = fill_tree_from_reader(&root_p, reader);
@@ -567,7 +536,7 @@ index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
    }
 
    output_index->data_structure = root_p;
-   output_index->projection = projection;
+   output_index->input_projector = reader->input_projector;
    output_index->num_elements = root_p->num_elements;
    output_index->write_to_file = &write_kdtree_index_to_file;
    output_index->free = &free_kdtree_index;

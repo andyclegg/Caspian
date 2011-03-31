@@ -1,8 +1,6 @@
 #ifndef HEADER_GRIDDING
 #define HEADER_GRIDDING
 
-#include <proj_api.h>
-
 #include "io_spec.h"
 #include "kd_tree.h"
 #include "reduction_functions.h"

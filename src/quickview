@@ -23,7 +23,7 @@ for inputfile in result.data_file:
    height = input_data.size / width
    input_data = input_data.reshape(height, width)
    if (input_data == result.fillval).all():
-      if result.verbose: print "No data in image"
+      print "No data in image %s" % inputfile
       continue
    masked_data = numpy.ma.masked_array(input_data, input_data == result.fillval)
 

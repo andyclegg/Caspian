@@ -3,6 +3,7 @@
 #include "data_handling.h"
 #include "gridding.h"
 #include "io_spec.h"
+#include "projector.h"
 
 int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, index *data_index, int verbose) {
 
@@ -37,16 +38,9 @@ int perform_gridding(input_spec inspec, output_spec outspec, reduction_function 
 
          if (outspec.lats_output != NULL || outspec.lons_output != NULL) {
             // Get the central latitude and longitude for this cell, and store
-            projUV projection_input, projection_output;
-            projection_input.u = (tr_y + bl_y) / 2.0;
-            projection_input.v = (tr_x + bl_x) / 2.0;
-
-            projection_output = pj_inv(projection_input, outspec.grid_spec->projection);
-            if (outspec.lats_output != NULL) outspec.lats_output[index] = projection_output.v * RAD_TO_DEG;
-            if (outspec.lons_output != NULL) outspec.lons_output[index] = projection_output.u * RAD_TO_DEG;
-            #ifdef DEBUG
-            printf("(%d, %d) => (%f:%f, %f:%f)\n", u, v, bl_x, tr_x, bl_y, tr_y);
-            #endif
+            spherical_coordinates coords = data_index->input_projector->inverse_project(data_index->input_projector, (tr_y + bl_y) / 2.0, (tr_x + bl_x) / 2.0);
+            if (outspec.lats_output != NULL) outspec.lats_output[index] = coords.latitude;
+            if (outspec.lons_output != NULL) outspec.lons_output[index] = coords.longitude;
          }
       }
    }
