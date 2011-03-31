@@ -153,5 +153,5 @@ reduction_function get_reduction_function_by_name(char *name) {
 }
 
 int reduction_function_is_undef(reduction_function f) {
-   return (f.type == undef_type);
+   return (f.type == undef_style);
 }

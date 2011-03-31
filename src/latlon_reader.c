@@ -41,7 +41,7 @@ latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char
       }
    }
    if ((lat_stat.st_size % sizeof(float)) != 0) {
-      fprintf(stderr, "Critical: Size not divisible by %lu\n", sizeof(float));
+      fprintf(stderr, "Critical: Size not divisible by %u\n", sizeof(float));
       return NULL;
    }
    no_elements = (size_t) lat_stat.st_size / sizeof(float);
