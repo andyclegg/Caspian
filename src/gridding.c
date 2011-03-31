@@ -1,9 +1,8 @@
 #include <time.h>
+#include <omp.h>
 
-#include "data_handling.h"
 #include "gridding.h"
 #include "io_spec.h"
-#include "projector.h"
 
 int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, index *data_index, int verbose) {
 

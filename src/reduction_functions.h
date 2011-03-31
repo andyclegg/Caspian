@@ -11,7 +11,7 @@ typedef struct {
 
 typedef struct {
    char* name;
-   enum style_e type;
+   style type;
    void (*call)(
       result_set *set,
       reduction_attrs *attrs,

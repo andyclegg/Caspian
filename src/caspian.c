@@ -1,26 +1,22 @@
 #define _XOPEN_SOURCE 600
 #include <errno.h>
 #include <fcntl.h>
-#include <float.h>
 #include <getopt.h>
-#include <stdlib.h>
 #include <libgen.h>
 #include <math.h>
-#include <omp.h>
-#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
-#include "kd_tree.h"
 #include "data_handling.h"
-#include "reduction_functions.h"
-#include "grid.h"
 #include "gridding.h"
+#include "grid.h"
+#include "kd_tree.h"
 #include "projector.h"
+#include "reduction_functions.h"
 
 #define WGS84_POLAR_CIRCUMFERENCE 40007863.0
 #define WGS84_EQUATORIAL_CIRCUMFERENCE 40075017.0
@@ -99,8 +95,8 @@ int main(int argc, char **argv) {
    reduction_function selected_reduction_function = get_reduction_function_by_name("mean");
    NUMERIC_WORKING_TYPE input_fill_value = -999.0, output_fill_value = -999.0;
    int verbosity = 0;
-   time_t start_time, end_time;
    float time_min = -INFINITY, time_max = +INFINITY;
+   time_t start_time, end_time;
 
    // Paranoid dtype checks
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {

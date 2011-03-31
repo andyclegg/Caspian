@@ -1,10 +1,8 @@
-#include <errno.h>
 #include <float.h>
 #include <math.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
 
 #include "kd_tree.h"
 #include "latlon_reader.h"
