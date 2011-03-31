@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <proj_api.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,11 +6,9 @@
 #include <sys/stat.h>
 #include <math.h>
 
-#include <proj_api.h>
-
 #include "latlon_reader.h"
 
-latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char *time_filename, projPJ *projection) {
+latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char *time_filename, projector *input_projector) {
 
    // Open the files for reading, check sizes
    struct stat lat_stat, lon_stat, time_stat;
@@ -79,7 +76,7 @@ latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char
    new_reader->lat_file = lat_file;
    new_reader->lon_file = lon_file;
    new_reader->time_file = time_file;
-   new_reader->projection = projection;
+   new_reader->input_projector = input_projector;
    new_reader->num_records = no_elements;
    new_reader->current_record = 0;
 
@@ -101,7 +98,6 @@ unsigned int latlon_reader_get_num_records(latlon_reader_t *reader) {
 
 int latlon_reader_read(latlon_reader_t *reader, float *x, float *y, float *t) {
    float latitude, longitude;
-   projUV projection_input, projection_output;
 
    // Check to see if we are at the end
    if (reader->current_record >= reader->num_records) {
@@ -116,12 +112,11 @@ int latlon_reader_read(latlon_reader_t *reader, float *x, float *y, float *t) {
       fprintf(stderr, "Non-finite latitude/longitude/time read (NaN or Inf)\n");
       exit(-1);
    }
-   projection_input.u = longitude * DEG_TO_RAD;
-   projection_input.v = latitude * DEG_TO_RAD;
-   projection_output = pj_fwd(projection_input, reader->projection);
 
-   *y = (float) projection_output.v;
-   *x = (float) projection_output.u;
+   projected_coordinates output = reader->input_projector->project(reader->input_projector, longitude, latitude);
+
+   *y = (float) output.y;
+   *x = (float) output.x;
 
    // Increment current record
    reader->current_record++;

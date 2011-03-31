@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "kd_tree.h"
 #include "median.h"
 #include "data_handling.h"

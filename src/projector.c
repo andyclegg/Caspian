@@ -4,16 +4,19 @@
 
 #include "projector.h"
 
-projected_coordinates _proj_project(projector *p, float latitude, float longitude) {
+projected_coordinates _proj_project(projector *p, float longitude, float latitude) {
    projUV pj_input;
    pj_input.u = longitude * DEG_TO_RAD;
    pj_input.v = latitude * DEG_TO_RAD;
    projUV pj_output = pj_fwd(pj_input, (projUV *) p->internals);
-   projected_coordinates output = {pj_output.u, pj_output.v};
+   projected_coordinates output = {pj_output.v, pj_output.u};
+   #ifdef DEBUG
+   printf("(%f, %f) -project-> [%f, %f]\n", longitude, latitude, output.y, output.x);
+   #endif
    return output;
 }
 
-spherical_coordinates _proj_inverse_project(projector *p, float x, float y) {
+spherical_coordinates _proj_inverse_project(projector *p, float y, float x) {
    projUV pj_input;
    pj_input.u = y;
    pj_input.v = x;

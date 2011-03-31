@@ -3,6 +3,7 @@
 #include "result_set.h"
 #include "latlon_reader.h"
 #include "index.h"
+#include "projector.h"
 
 typedef struct {
    short int tag;
@@ -22,7 +23,7 @@ typedef struct {
    unsigned int tree_num_nodes;
    kdtree_node *tree_nodes;
    observation *observations;
-   projPJ *projection;
+   projector *input_projector;
 } kdtree;
 
 index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader);

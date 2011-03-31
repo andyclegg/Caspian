@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <float.h>
 #include <getopt.h>
+#include <stdlib.h>
 #include <libgen.h>
 #include <math.h>
 #include <omp.h>
@@ -19,6 +20,7 @@
 #include "reduction_functions.h"
 #include "grid.h"
 #include "gridding.h"
+#include "projector.h"
 
 #define WGS84_POLAR_CIRCUMFERENCE 40007863.0
 #define WGS84_EQUATORIAL_CIRCUMFERENCE 40075017.0
@@ -337,13 +339,13 @@ int main(int argc, char **argv) {
       fclose(input_index_file);
    } else {
       // Initialize the projection
-      projPJ *projection = pj_init_plus(projection_string);
-      if (projection == NULL) {
-         fprintf(stderr, "Critical: Couldn't initialize projection\n");
+      projector *input_projection = get_proj_projector_from_string(projection_string);
+      if (input_projection == NULL) {
+         fprintf(stderr, "Critical: Couldn't initialize projector\n");
          return -1;
       }
 
-      latlon_reader_t *reader = latlon_reader_init(input_lat_filename, input_lon_filename, input_time_filename, projection);
+      latlon_reader_t *reader = latlon_reader_init(input_lat_filename, input_lon_filename, input_time_filename, input_projection);
 
       if (reader == NULL) {
          printf("Failed to initialise data reader\n");
@@ -447,7 +449,7 @@ int main(int argc, char **argv) {
       out.lats_output = lats_output;
       out.lons_output = lons_output;
       out.output_dtype = output_dtype;
-      out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->projection);
+      out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->input_projector);
       if (out.grid_spec == NULL) {
          fprintf(stderr, "Failed to initialise output grid\n");
          return -1;
