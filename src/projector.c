@@ -1,5 +1,6 @@
 #include <proj_api.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "projector.h"

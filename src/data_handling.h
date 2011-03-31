@@ -7,15 +7,15 @@ typedef float float32_t;
 typedef double float64_t;
 
 // Enumerate the dtypes
-enum dtype_e {uint8, uint16, uint32, uint64, int8, int16, int32, int64, float32, float64, coded8, coded16, coded32, coded64, undef_type};
+typedef enum {uint8, uint16, uint32, uint64, int8, int16, int32, int64, float32, float64, coded8, coded16, coded32, coded64, undef_type} dtype_t;
 // Enumerate reduction function types
-enum style_e {coded, numeric, undef_style};
+typedef enum {coded, numeric, undef_style} style;
 
 // Dtype struct encoding specifier, size and coded/non-coded
 typedef struct dtype_s {
-   enum dtype_e specifier;
+   dtype_t specifier;
    size_t size;
-   enum style_e type;
+   style type;
    char* string;
 } dtype;
 

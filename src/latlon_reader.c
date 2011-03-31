@@ -1,10 +1,9 @@
 #include <errno.h>
-#include <stdint.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <math.h>
 
 #include "latlon_reader.h"
 

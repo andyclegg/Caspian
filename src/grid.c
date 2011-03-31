@@ -1,9 +1,7 @@
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "grid.h"
-#include "data_handling.h"
-
 
 grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projector *input_projector) {
    grid *result = malloc(sizeof(grid));

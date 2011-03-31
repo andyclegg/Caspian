@@ -2,7 +2,7 @@ SOURCE_FILES=src/median.c src/caspian.c src/result_set.c src/latlon_reader.c src
 LDFLAGS=-lm -lproj
 CFLAGS=-std=c99 -Wall -Werror
 
-all: caspian debug docs projcalc quickview
+all: caspian quickview
 
 caspian: bin/caspian
 projcalc: bin/projcalc
