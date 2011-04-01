@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Implements command-line functionality for Caspian.
+ */
 #define _XOPEN_SOURCE 600
 #include <errno.h>
 #include <fcntl.h>
@@ -18,11 +24,21 @@
 #include "projector.h"
 #include "reduction_functions.h"
 
+/**
+ * Polar circumference of the earth according to WGS84 - used for calculating default values
+ */
 #define WGS84_POLAR_CIRCUMFERENCE 40007863.0
+/**
+ * Equatorial circumference of the earth according to WGS84 - used for calculating default values
+ */
 #define WGS84_EQUATORIAL_CIRCUMFERENCE 40075017.0
 
-void help(char *prog) {
-   printf("Usage: %s <options>\n", basename(prog));
+/**
+ * Display the help text for the main executable program
+ * @param executable The name or full path of the executable
+ */
+void help(char *executable) {
+   printf("Usage: %s <options>\n", basename(executable));
    printf("Options                         Default                      Help\n");
    printf(" Index controls\n");
    printf("  --input-lats <filename>                                    Specify filename for input latitude\n");
@@ -77,6 +93,11 @@ void help(char *prog) {
    printf("Coded function dtypes: coded8, coded16, coded32, coded64\n");
 }
 
+/**
+ * Implementation of the gridding flow: Parse arguments, open files, build/load/save index, run gridding
+ * @param argc Number of arguments
+ * @param argv Arguments
+ */
 int main(int argc, char **argv) {
 
    char *input_data_filename = NULL, *input_lat_filename = NULL, *input_lon_filename = NULL, *input_time_filename = NULL;
