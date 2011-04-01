@@ -1,3 +1,10 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Definition of the 'index' data type. Implementations are included elsewhere.
+ * @see generate_kdtree_index_from_latlon_reader
+ */
 #ifndef HEADER_INDEX
 #define HEADER_INDEX
 #include <stdio.h>

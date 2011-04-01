@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Implementation of an adaptive kd-tree, specific to 2-dimensional horizontal coordinates.
+ */
 #include <float.h>
 #include <math.h>
 #include <omp.h>
@@ -527,6 +533,12 @@ index *read_kdtree_index_from_file(FILE *input_file) {
    return output_index;
 }
 
+/**
+ * Construct an adaptive kdtree from a set of geolocation information.
+ *
+ * @param reader A latlon_reader instance (source of gelocation information)
+ * @return Pointer to an index structure.
+ */
 index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
    kdtree *root_p;
 
