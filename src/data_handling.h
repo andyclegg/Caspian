@@ -1,32 +1,55 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Defines data structures for representing data types and establishes the numeric working type
+ */
 #ifndef HEADER_DATA_HANDLING
 #define HEADER_DATA_HANDLING
 #include <stdint.h>
 
-// Define float32_t and float64_t for consistency
+/**
+ * A float32_t (float) for consistency with other data types
+ */
 typedef float float32_t;
+/**
+ * A float64_t (double) for consistency with other data types
+ */
 typedef double float64_t;
 
-// Enumerate the dtypes
+/**
+ * Enumeration of possible dtype names (e.g. uint8, coded32)
+ */
 typedef enum {uint8, uint16, uint32, uint64, int8, int16, int32, int64, float32, float64, coded8, coded16, coded32, coded64, undef_type} dtype_t;
-// Enumerate reduction function types
+
+/**
+ * Enumeration of dtype styles (e.g. coded, numeric)
+ */
 typedef enum {coded, numeric, undef_style} style;
 
-// Dtype struct encoding specifier, size and coded/non-coded
+/**
+ * Structure representing a dtype
+ */
 typedef struct dtype_s {
+   /** The actual type of this dtype */
    dtype_t specifier;
+   /** The size of this dtype in bytes (for convenience) */
    size_t size;
+   /** The style of this dtype (numeric, coded) */
    style type;
+   /** The string represention of this type (for convenience) */
    char* string;
 } dtype;
 
+/** Boolean test for dtype equality */
 #define dtype_equal(a, b) (a.specifier == b.specifier && a.size == b.size)
 
-
-// Determine if 64bit
 #ifdef INT64_MAX
+/** Define a numeric working type as float32_t or float64_t on 32-bit and 64-bit systems respectively. */
 #define NUMERIC_WORKING_TYPE float64_t
 #define SIXTYFOURBIT
 #else
+/** Define a numeric working type as float32_t or float64_t on 32-bit and 64-bit systems respectively. */
 #define NUMERIC_WORKING_TYPE float32_t
 #endif
 

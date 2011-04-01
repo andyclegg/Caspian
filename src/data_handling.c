@@ -1,9 +1,22 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Implements methods for retrieving and storing data of different types from untyped memory arrays.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "data_handling.h"
 
+/**
+ * Get a single number from an array, formatted as the current working numeric type
+ * @param data Pointer to the memory array
+ * @param input_dtype The type of the memory array
+ * @param index Index of the desired number
+ * @return The number from the array, formatted according to NUMERIC_WORKING_TYPE (normally a float or double)
+ */
 NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index) {
    switch (input_dtype.specifier) {
       case uint8:
@@ -36,15 +49,13 @@ NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index) {
    }
 }
 
-void coded_get(void *data, dtype input_dtype, int index, void *output) {
-   memcpy(output, &((char *) data)[index*input_dtype.size], input_dtype.size);
-}
-
-void coded_put(void *data, dtype output_dtype, int index, void *input) {
-   memcpy(&((char *) data)[index*output_dtype.size], input, output_dtype.size);
-}
-
-
+/**
+ * Store a single number into an array
+ * @param data Pointer to the memory array
+ * @param output_dtype The type of the memory array
+ * @param index Index of the desired storage position
+ * @param data_item The number to be stored
+ */
 void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE data_item) {
    #define put(type) ((type *) data)[index] = (type) data_item
    switch (output_dtype.specifier) {
@@ -88,6 +99,41 @@ void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE
    }
 }
 
+/**
+ * Get a single piece of coded data from an array.
+ * @param data Pointer to the memory array.
+ * @param input_dtype The type of the memory array.
+ * @param index Index of the desired number.
+ * @param output Pointer to where the retrieved data should be stored
+ */
+void coded_get(void *data, dtype input_dtype, int index, void *output) {
+   memcpy(output, &((char *) data)[index*input_dtype.size], input_dtype.size);
+}
+
+/**
+ * Store a single piece of coded data into an array
+ * @param data Pointer to the memory array
+ * @param output_dtype The type of the memory array
+ * @param index Index of the desired storage position
+ * @param input The coded data to be stored
+ */
+void coded_put(void *data, dtype output_dtype, int index, void *input) {
+   memcpy(&((char *) data)[index*output_dtype.size], input, output_dtype.size);
+}
+
+/**
+ * Parse a string representing a dtype ('uint8', 'float64', 'coded16' etc)
+ *
+ * The dtype string is constructed as type + size, where size is 8, 16, 32 or 64, and type may be one of:
+ *   * uint: Unsigned Integer
+ *   * int: Signed Integer
+ *   * float: Floating Point
+ *   * coded: Coded data (treated as an opaque block of memory)
+ * If a non-parseable string is passed to this function, it will call exit()
+ *
+ * @param dtype_string String representing the dtype.
+ * @return A dtype struct representing the parsed dtype.
+ */
 dtype dtype_string_parse(char *dtype_string) {
    dtype output;
    int parsed = 0;
