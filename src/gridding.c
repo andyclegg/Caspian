@@ -1,10 +1,26 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Implements the standard gridding algorithm
+ */
 #include <time.h>
 #include <omp.h>
 
 #include "gridding.h"
 #include "io_spec.h"
 
-int perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, index *data_index, int verbose) {
+/**
+ * Perform gridding based on input and output specifications, using the specified reduction function and data source.
+ *
+ * @param inspec Specification of the input data.
+ * @param outspec Specification of the output grid.
+ * @param reduce_func Selection reduction function.
+ * @param attrs Attributes to be used by the reduction function.
+ * @param data_index Spatial index to grid with.
+ * @param verbose Set as >=1 for verbose output, 0 for silence.
+ */
+void perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, index *data_index, int verbose) {
 
    if (verbose) printf("Building output image\n");
    time_t start_time = time(NULL);
@@ -48,6 +64,4 @@ int perform_gridding(input_spec inspec, output_spec outspec, reduction_function 
       printf("Output image built.\n");
       printf("Building image took %d seconds\n", (int) (end_time - start_time));
    }
-
-   return 1; // Success
 }
