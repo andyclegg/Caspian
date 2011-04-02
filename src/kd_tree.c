@@ -27,11 +27,17 @@
 #define SQUARED(x) ((x)*(x))
 
 /** A format specifier for the on-disk binary file format. This should be incremented whenever the on-disk format changes.*/
-#define KDTREE_FILE_FORMAT 1
+#define KDTREE_FILE_FORMAT 2
 
+/**
+ * Create a kdtree for a given number of elements. This includes calculating the size of the tree, and allocating space for the tree and the observations.
+ *
+ * @param num_elements The number of observations to be stored in the kdtree.
+ * @return A pointer to an allocated (but unconstructed) kdtree.
+ */
 kdtree *construct_tree(unsigned int num_elements) {
    size_t total_allocation = 0;
-   kdtree *tree_p = malloc(sizeof(kdtree));
+   kdtree *output_tree = malloc(sizeof(kdtree));
    total_allocation += sizeof(kdtree);
    float tree_number_of_leaf_elements = powf(2.0, ceilf(log2f((float) num_elements)));
    float tree_number_of_elements_f = (2 * tree_number_of_leaf_elements) - 1;
@@ -41,76 +47,23 @@ kdtree *construct_tree(unsigned int num_elements) {
    printf("Allocating a tree of size %d for %d leaf elements\n", tree_number_of_elements, num_elements);
    #endif
 
-   tree_p->num_elements = num_elements;
-   tree_p->tree_num_nodes = tree_number_of_elements;
+   output_tree->num_elements = num_elements;
+   output_tree->tree_num_nodes = tree_number_of_elements;
 
-   tree_p->tree_nodes = calloc(sizeof(kdtree_node), tree_number_of_elements);
+   output_tree->tree_nodes = calloc(sizeof(kdtree_node), tree_number_of_elements);
    total_allocation += sizeof(kdtree_node) * tree_number_of_elements;
    for (unsigned int i=0; i<tree_number_of_elements; i++) {
-      tree_p->tree_nodes[i].tag = UNINITIALISED;
+      output_tree->tree_nodes[i].tag = UNINITIALISED;
    }
 
-   tree_p->observations = calloc(sizeof(observation), num_elements);
+   output_tree->observations = calloc(sizeof(observation), num_elements);
    total_allocation += sizeof(observation) * num_elements;
 
    #ifdef DEBUG_KDTREE
    printf("construct_tree: Total allocation is %ld bytes\n", (long int) total_allocation);
    #endif
 
-   return tree_p;
-}
-
-void kdtree_save_to_file(FILE *output_file, kdtree *tree_p) {
-   // Write the header to file
-   unsigned int file_format_number = KDTREE_FILE_FORMAT;
-   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
-   fwrite(&tree_p->num_elements, sizeof(unsigned int), 1, output_file);
-   fwrite(&tree_p->tree_num_nodes, sizeof(unsigned int), 1, output_file);
-
-   // Write the data to file
-   fwrite(tree_p->tree_nodes, sizeof(kdtree_node), tree_p->tree_num_nodes, output_file);
-   fwrite(tree_p->observations, sizeof(observation), tree_p->num_elements, output_file);
-
-   // Write an end of file marker for paranoia
-   fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
-}
-
-kdtree *kdtree_read_from_file(FILE *input_file) {
-   // Read and check the header
-   unsigned int file_format_number;
-   unsigned int num_elements;
-   unsigned int tree_num_nodes;
-   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
-   fread(&num_elements, sizeof(unsigned int), 1, input_file);
-   fread(&tree_num_nodes, sizeof(unsigned int), 1, input_file);
-
-   if (file_format_number != KDTREE_FILE_FORMAT) {
-      fprintf(stderr, "Wrong disk file format (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
-      exit(-1);
-   }
-
-   // Create tree
-   kdtree *tree_p = construct_tree(num_elements);
-
-   // Check the computed number of tree nodes against the number read from file
-   if (tree_num_nodes != tree_p->tree_num_nodes) {
-      fprintf(stderr, "Mismatch in number of tree nodes (read %d, computed %d)\n", tree_num_nodes, tree_p->tree_num_nodes);
-      exit(-1);
-   }
-
-   // Read the data into the tree
-   fread(tree_p->tree_nodes, sizeof(kdtree_node), tree_p->tree_num_nodes, input_file);
-   fread(tree_p->observations, sizeof(observation), tree_p->num_elements, input_file);
-
-   // Paranoidly check the end of file header
-   fread(&file_format_number, sizeof(unsigned int), 1, input_file);
-   if (file_format_number != KDTREE_FILE_FORMAT) {
-      fprintf(stderr, "End of file marker incorrect (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
-      exit(-1);
-   }
-
-   // All done!
-   return tree_p;
+   return output_tree;
 }
 
 static void inspect_tree_node(kdtree *tree_p, unsigned int current_index, int indent) {
@@ -142,11 +95,21 @@ static void inspect_tree_node(kdtree *tree_p, unsigned int current_index, int in
    inspect_tree_node(tree_p, RIGHT_CHILD(current_index), indent + 1);
 }
 
+/**
+ * Print out the contents of the given tree.
+ *
+ * @param tree_p A pointer to the kdtree to print.
+ */
 void inspect_tree(kdtree *tree_p) {
    printf("Inspecting tree at %ld (%d elements)\n", (long) tree_p, tree_p->num_elements);
    inspect_tree_node(tree_p, 0, 0);
 }
 
+/**
+ * Free the given kdtree.
+ *
+ * @param tree_p The kdtree to free.
+ */
 void free_tree(kdtree *tree_p) {
    free(tree_p->tree_nodes);
    free(tree_p->observations);
@@ -154,7 +117,7 @@ void free_tree(kdtree *tree_p) {
 }
 
 
-static void query_tree_at(kdtree *tree_p, float *dimension_bounds, result_set *results, unsigned int current_element) {
+static void query_kdtree_at(kdtree *tree_p, float *dimension_bounds, result_set *results, unsigned int current_element) {
    #ifdef DEBUG_KDTREE
    printf("Querying tree at %d\n", current_element);
    #endif
@@ -206,12 +169,12 @@ static void query_tree_at(kdtree *tree_p, float *dimension_bounds, result_set *r
 
       if (current_node->data.discriminator >= dimension_bounds[2*(current_node->tag) + LOWER]) {
          //Search left
-         query_tree_at(tree_p, dimension_bounds, results, LEFT_CHILD(current_element));
+         query_kdtree_at(tree_p, dimension_bounds, results, LEFT_CHILD(current_element));
       };
 
       if (current_node->data.discriminator <= dimension_bounds[2*(current_node->tag) + UPPER]) {
          //Search right
-         query_tree_at(tree_p, dimension_bounds, results, RIGHT_CHILD(current_element));
+         query_kdtree_at(tree_p, dimension_bounds, results, RIGHT_CHILD(current_element));
       };
    };
 };
@@ -244,11 +207,23 @@ observation *nearest_neighbour_recursive(kdtree *tree_p, float *target_point, un
    }
 }
 
+/**
+ * Find the single-nearest neighbour to the given target point in the given tree.
+ *
+ * @param tree_p The kdtree to search.
+ * @param target_point A pointer to a 2-array of floats (X, then Y)
+ * @return The closest observation to the given point.
+ */
 observation *nearest_neighbour(kdtree *tree_p, float *target_point) {
    return nearest_neighbour_recursive(tree_p, target_point, 0);
 }
 
 
+/**
+ * Verify the correctness of a given kdtree by tracing the ancestry of each leaf node to ensure that the discriminators (internal nodes) correctly divide the space.
+ *
+ * @param tree_p Pointer to a kdtree to verify.
+ */
 void verify_tree(kdtree *tree_p) {
    unsigned int start_of_leaves = (tree_p->tree_num_nodes + 1) / 2;
 
@@ -299,12 +274,27 @@ void verify_tree(kdtree *tree_p) {
   }
 }
 
-result_set *query_tree(index *toquery, float *dimension_bounds) {
+/**
+ * Query a kdtree for points within given bounds.
+ *
+ * @param toquery The kdtree to query.
+ * @param dimension_bounds The bounds of the query - an array of floats (lower X, upper X, lower Y, upper Y, lower T, upper T).
+ * @return A pointer to a result_set initialised with the query results.
+ */
+result_set *query_kdtree(index *toquery, float *dimension_bounds) {
    result_set *results = result_set_init();
-   query_tree_at((kdtree *)(toquery->data_structure), dimension_bounds, results, 0);
+   query_kdtree_at((kdtree *)(toquery->data_structure), dimension_bounds, results, 0);
    return results;
 }
 
+/**
+ * Compare two observations along a given comparison dimension.
+ *
+ * @param Pointer to the first observation to compare.
+ * @param Pointer to the second observation to compare.
+ * @param Integer to specify the dimension to sort on (e.g. #X, #Y)
+ * @return -1 if a < b, 0 if a == b, 1 if a > b
+ */
 static int compare_observations(const void* a, const void* b, short int comparison_dimension) {
    observation *t_a = (observation *) a;
    observation *t_b = (observation *) b;
@@ -314,10 +304,24 @@ static int compare_observations(const void* a, const void* b, short int comparis
    return (t_a->dimensions[comparison_dimension] > t_b->dimensions[comparison_dimension]);
 }
 
+/**
+ * Compare two observations based on their latitude value. Compatible with qsort
+ *
+ * @param Pointer to the first observation to compare.
+ * @param Pointer to the second observation to compare.
+ * @return -1 if a < b, 0 if a == b, 1 if a > b
+ */
 static int compare_latitudes(const void* a, const void* b) {
    return compare_observations(a, b, Y);
 }
 
+/**
+ * Compare two observations based on their longitude value. Compatible with qsort
+ *
+ * @param Pointer to the first observation to compare.
+ * @param Pointer to the second observation to compare.
+ * @return -1 if a < b, 0 if a == b, 1 if a > b
+ */
 static int compare_longitudes(const void* a, const void* b) {
    return compare_observations(a, b, X);
 }
@@ -441,7 +445,13 @@ static int recursive_build_kd_tree(kdtree *tree_p,unsigned int first_element,uns
    return 0;
 }
 
-int fill_tree_from_reader(kdtree *tree_p, latlon_reader_t *reader) {
+/**
+ * Fill a constructed kdtree from the values found in the given reader.
+ *
+ * @param tree_p The constructed kdtree to fill.
+ * @param reader The latlon_reader_t to read the values from.
+ */
+void fill_tree_from_reader(kdtree *tree_p, latlon_reader_t *reader) {
 
    unsigned int no_elements = latlon_reader_get_num_records(reader);
 
@@ -453,15 +463,20 @@ int fill_tree_from_reader(kdtree *tree_p, latlon_reader_t *reader) {
       result = latlon_reader_read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y], &observations[current_index].dimensions[T]);
       if (!result) {
          printf("Critical: Failed to read all elements from files\n");
-         return 0;
+         exit(-1);
       }
    }
 
    // Call recursive_build_kd_tree, accross the entire range of data, with current element as 0, and current sort order as -1 (equivalent to unsorted)
    recursive_build_kd_tree(tree_p, 0, no_elements - 1, 0, -1);
-   return 1;
 }
 
+/**
+ * Write the given kdtree-based index to the given file.
+ *
+ * @param towrite The index to write (must be a kdtree based index).
+ * @param output_file The file to write the binary representation of the index to.
+ */
 void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
    kdtree *tree_p = (kdtree *) towrite->data_structure;
 
@@ -472,19 +487,35 @@ void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
    // Serialize the projector to the file
    tree_p->input_projector->serialize_to_file(tree_p->input_projector, output_file);
 
-   // Write the tree to file
-   kdtree_save_to_file(output_file, tree_p);
+   // Write the sizes of the data
+   fwrite(&tree_p->num_elements, sizeof(unsigned int), 1, output_file);
+   fwrite(&tree_p->tree_num_nodes, sizeof(unsigned int), 1, output_file);
+
+   // Write the tree data to the file
+   fwrite(tree_p->tree_nodes, sizeof(kdtree_node), tree_p->tree_num_nodes, output_file);
+   fwrite(tree_p->observations, sizeof(observation), tree_p->num_elements, output_file);
 
    // Write a concluding header
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
 }
 
+/**
+ * Free a kdtree-based index.
+ *
+ * @param tofree The kdtree-based index to free.
+ */
 void free_kdtree_index(index *tofree) {
    kdtree *tree_p = (kdtree *) tofree->data_structure;
    free_tree(tree_p);
    free(tofree);
 }
 
+/**
+ * Return a kdtree-based index from the given file.
+ *
+ * @param input_file The file from which to read the index.
+ * @return A pointer to a constructed and initialised kdtree-based index.
+ */
 index *read_kdtree_index_from_file(FILE *input_file) {
    // Read and check the header
    unsigned int file_format_number;
@@ -502,8 +533,24 @@ index *read_kdtree_index_from_file(FILE *input_file) {
       exit(-1);
    }
 
-   // Read kdtree
-   kdtree *tree_p = kdtree_read_from_file(input_file);
+   // Read the sizes of data for the kdtree
+   unsigned int num_elements;
+   unsigned int tree_num_nodes;
+   fread(&num_elements, sizeof(unsigned int), 1, input_file);
+   fread(&tree_num_nodes, sizeof(unsigned int), 1, input_file);
+
+   // Create tree
+   kdtree *tree_p = construct_tree(num_elements);
+
+   // Check the computed number of tree nodes against the number read from file
+   if (tree_num_nodes != tree_p->tree_num_nodes) {
+      fprintf(stderr, "Mismatch in number of tree nodes (read %d, computed %d)\n", tree_num_nodes, tree_p->tree_num_nodes);
+      exit(-1);
+   }
+
+   // Read the data into the tree
+   fread(tree_p->tree_nodes, sizeof(kdtree_node), tree_p->tree_num_nodes, input_file);
+   fread(tree_p->observations, sizeof(observation), tree_p->num_elements, input_file);
 
    // Check concluding header
    fread(&file_format_number, sizeof(unsigned int), 1, input_file);
@@ -530,7 +577,7 @@ index *read_kdtree_index_from_file(FILE *input_file) {
    output_index->num_elements = tree_p->num_elements;
    output_index->write_to_file = &write_kdtree_index_to_file;
    output_index->free = &free_kdtree_index;
-   output_index->query = &query_tree;
+   output_index->query = &query_kdtree;
 
    return output_index;
 }
@@ -544,11 +591,7 @@ index *read_kdtree_index_from_file(FILE *input_file) {
 index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
    kdtree *root_p = construct_tree(latlon_reader_get_num_records(reader));
 
-   int result = fill_tree_from_reader(root_p, reader);
-   if (!result) {
-      fprintf(stderr, "Failed to build tree (%d)\n", result);
-      return NULL;
-   }
+   fill_tree_from_reader(root_p, reader);
 
    #ifdef DEBUG
    printf("Verifying tree\n");
@@ -560,7 +603,7 @@ index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
    index *output_index = malloc(sizeof(index));
    if (output_index == NULL) {
       fprintf(stderr, "Failed to allocate space for index\n");
-      return NULL;
+      exit(-1);
    }
 
    output_index->data_structure = root_p;
@@ -568,7 +611,7 @@ index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
    output_index->num_elements = root_p->num_elements;
    output_index->write_to_file = &write_kdtree_index_to_file;
    output_index->free = &free_kdtree_index;
-   output_index->query = &query_tree;
+   output_index->query = &query_kdtree;
 
    return output_index;
 }
