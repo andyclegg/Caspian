@@ -29,11 +29,10 @@
 /** A format specifier for the on-disk binary file format. This should be incremented whenever the on-disk format changes.*/
 #define KDTREE_FILE_FORMAT 1
 
-void construct_tree(kdtree **tree_pp, unsigned int num_elements) {
+kdtree *construct_tree(unsigned int num_elements) {
    size_t total_allocation = 0;
-   *tree_pp = malloc(sizeof(kdtree));
+   kdtree *tree_p = malloc(sizeof(kdtree));
    total_allocation += sizeof(kdtree);
-   kdtree *tree_p = *tree_pp;
    float tree_number_of_leaf_elements = powf(2.0, ceilf(log2f((float) num_elements)));
    float tree_number_of_elements_f = (2 * tree_number_of_leaf_elements) - 1;
    unsigned int tree_number_of_elements = (unsigned int) fmax(tree_number_of_elements_f, 1.0);
@@ -57,6 +56,8 @@ void construct_tree(kdtree **tree_pp, unsigned int num_elements) {
    #ifdef DEBUG_KDTREE
    printf("construct_tree: Total allocation is %ld bytes\n", (long int) total_allocation);
    #endif
+
+   return tree_p;
 }
 
 void kdtree_save_to_file(FILE *output_file, kdtree *tree_p) {
@@ -89,8 +90,7 @@ kdtree *kdtree_read_from_file(FILE *input_file) {
    }
 
    // Create tree
-   kdtree *tree_p;
-   construct_tree(&tree_p, num_elements);
+   kdtree *tree_p = construct_tree(num_elements);
 
    // Check the computed number of tree nodes against the number read from file
    if (tree_num_nodes != tree_p->tree_num_nodes) {
@@ -441,14 +441,9 @@ static int recursive_build_kd_tree(kdtree *tree_p,unsigned int first_element,uns
    return 0;
 }
 
-int fill_tree_from_reader(kdtree **tree_pp, latlon_reader_t *reader) {
+int fill_tree_from_reader(kdtree *tree_p, latlon_reader_t *reader) {
 
    unsigned int no_elements = latlon_reader_get_num_records(reader);
-
-   //Construct the tree
-   construct_tree(tree_pp, no_elements);
-   kdtree *tree_p = *tree_pp;
-   tree_p->input_projector = reader->input_projector;
 
    observation *observations = tree_p->observations;
 
@@ -547,9 +542,9 @@ index *read_kdtree_index_from_file(FILE *input_file) {
  * @return Pointer to an index structure.
  */
 index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
-   kdtree *root_p;
+   kdtree *root_p = construct_tree(latlon_reader_get_num_records(reader));
 
-   int result = fill_tree_from_reader(&root_p, reader);
+   int result = fill_tree_from_reader(root_p, reader);
    if (!result) {
       fprintf(stderr, "Failed to build tree (%d)\n", result);
       return NULL;
