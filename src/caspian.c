@@ -6,20 +6,18 @@
  */
 #define _XOPEN_SOURCE 600
 #include <errno.h>
-#include <fcntl.h>
 #include <getopt.h>
 #include <libgen.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <time.h>
-#include <unistd.h>
 
 #include "data_handling.h"
 #include "gridding.h"
 #include "grid.h"
+#include "io_helper.h"
 #include "kd_tree.h"
 #include "projector.h"
 #include "reduction_functions.h"
@@ -394,77 +392,39 @@ int main(int argc, char **argv) {
       unsigned int input_data_number_bytes = data_index->num_elements * input_dtype.size;
       unsigned int output_data_number_bytes = width * height * output_dtype.size;
       unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
-      mode_t creation_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-      int output_open_flags = O_CREAT | O_TRUNC | O_RDWR;
 
-      int data_input_fd = -1, data_output_fd = -1;
-      char *data_input = NULL, *data_output = NULL;
-      if (write_data) {
-         printf("Mapping %d bytes of input data into memory\n", input_data_number_bytes);
-         data_input_fd = open(input_data_filename, O_RDONLY);
-         if (data_input_fd == -1) {
-            printf("Failed to open input data file %s\n", input_data_filename);
-            return -1;
-         }
-         data_input = mmap(0, input_data_number_bytes, PROT_READ, MAP_SHARED, data_input_fd, 0);
-         if (data_input == MAP_FAILED) {
-            printf("Failed to map data into memory (%s)\n", strerror(errno));
-            return -1;
-         }
+      memory_mapped_file *data_input_file = NULL, *data_output_file = NULL, *latitude_output_file = NULL, *longitude_output_file = NULL;
 
-         printf("Mapping %d bytes of output data into memory\n", output_data_number_bytes);
-         data_output_fd = open(output_data_filename, output_open_flags, creation_mode);
-         if(posix_fallocate(data_output_fd, 0, output_data_number_bytes) != 0) {
-            printf("Failed to allocate space in file system\n");
-            return -1;
-         }
-         data_output = mmap(0, output_data_number_bytes, PROT_WRITE, MAP_SHARED, data_output_fd, 0);
-         if (data_output == MAP_FAILED) {
-            printf("Failed to map output data into memory (%s)\n", strerror(errno));
-            return -1;
-         }
-      }
-
-      int lats_output_fd  = -1;
-      float *lats_output = NULL;
-      if (write_lats) {
-         lats_output_fd= open(output_lat_filename, output_open_flags, creation_mode);
-         if(posix_fallocate(lats_output_fd, 0, output_geo_number_bytes) != 0) {
-            printf("Failed to allocate space in file system\n");
-            return -1;
-         }
-         lats_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lats_output_fd, 0);
-         if (lats_output == MAP_FAILED) {
-            printf("Failed to map output lats file into memory (%s)\n", strerror(errno));
-            return -1;
-         }
-      }
-
-      int lons_output_fd = -1;
-      float *lons_output = NULL;
-      if (write_lons) {
-         lons_output_fd = open(output_lon_filename, output_open_flags, creation_mode);
-         if(posix_fallocate(lons_output_fd, 0, output_geo_number_bytes) != 0) {
-            printf("Failed to allocate space in file system\n");
-            return -1;
-         }
-         lons_output = mmap(0, output_geo_number_bytes, PROT_WRITE, MAP_SHARED, lons_output_fd, 0);
-         if (lons_output == MAP_FAILED) {
-            printf("Failed to map output lons file into memory (%s)\n", strerror(errno));
-            return -1;
-         }
-      }
-
-      // Setup input and output specs
+      // Setup input and output specs, and open files
       input_spec in;
       output_spec out;
 
-      in.input_dtype = input_dtype;
-      in.data_input = data_input;
+      if (write_data) {
+         data_input_file = open_memory_mapped_input_file(input_data_filename, input_data_number_bytes);
+         data_output_file = open_memory_mapped_output_file(output_data_filename, output_data_number_bytes);
 
-      out.data_output = data_output;
-      out.lats_output = lats_output;
-      out.lons_output = lons_output;
+         in.data_input = data_input_file->memory_mapped_data;
+         out.data_output = data_output_file->memory_mapped_data;
+      } else {
+         in.data_input = NULL;
+         out.data_output = NULL;
+      }
+
+      if (write_lats) {
+         latitude_output_file = open_memory_mapped_output_file(output_lat_filename, output_geo_number_bytes);
+         out.lats_output = (float32_t *) latitude_output_file->memory_mapped_data;
+      } else {
+         out.lats_output = NULL;
+      }
+
+      if (write_lons) {
+         longitude_output_file = open_memory_mapped_output_file(output_lon_filename, output_geo_number_bytes);
+         out.lons_output = (float32_t *) longitude_output_file->memory_mapped_data;
+      } else {
+         out.lons_output = NULL;
+      }
+
+      in.input_dtype = input_dtype;
       out.output_dtype = output_dtype;
       out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->input_projector);
       if (out.grid_spec == NULL) {
@@ -473,27 +433,21 @@ int main(int argc, char **argv) {
       }
       set_time_constraints(out.grid_spec, time_min, time_max);
 
-
       // Perform gridding
       perform_gridding(in, out, selected_reduction_function, &r_attrs, data_index, verbosity);
 
       // Unmap and close files
       if (write_data) {
-         munmap(data_input, input_data_number_bytes);
-         munmap(data_output, output_data_number_bytes);
-         close(data_input_fd);
-         close(data_output_fd);
+         data_input_file->close(data_input_file);
+         data_output_file->close(data_output_file);
       }
       if (write_lats) {
-         munmap(lats_output, output_geo_number_bytes);
-         close(lats_output_fd);
+         latitude_output_file->close(latitude_output_file);
       }
       if (write_lons) {
-         munmap(lons_output, output_geo_number_bytes);
-         close(lons_output_fd);
+         longitude_output_file->close(longitude_output_file);
       }
    }
-
 
    // Free option strings and working data
    free(input_data_filename);
