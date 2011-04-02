@@ -11,9 +11,6 @@ projected_coordinates _proj_project(projector *p, float longitude, float latitud
    pj_input.v = latitude * DEG_TO_RAD;
    projUV pj_output = pj_fwd(pj_input, (projUV *) p->internals);
    projected_coordinates output = {pj_output.v, pj_output.u};
-   #ifdef DEBUG
-   printf("(%f, %f) -project-> [%f, %f]\n", longitude, latitude, output.y, output.x);
-   #endif
    return output;
 }
 
