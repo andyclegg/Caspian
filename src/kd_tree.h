@@ -6,10 +6,10 @@
  */
 #ifndef  HEADER_KD_TREE_MINIMAL
 #define HEADER_KD_TREE_MINIMAL
-#include "result_set.h"
-#include "latlon_reader.h"
+#include "coordinate_reader.h"
 #include "index.h"
 #include "projector.h"
+#include "result_set.h"
 
 typedef struct {
    short int tag;
@@ -32,7 +32,7 @@ typedef struct {
    projector *input_projector;
 } kdtree;
 
-index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader);
+index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader);
 index *read_kdtree_index_from_file(FILE *input_file);
 
 /** Define X as having index 0 (e.g. in arrays) */

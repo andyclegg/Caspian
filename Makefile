@@ -1,4 +1,4 @@
-SOURCE_FILES=src/median.c src/caspian.c src/result_set.c src/latlon_reader.c src/kd_tree.c src/data_handling.c src/reduction_functions.c src/grid.c src/gridding.c src/projector.c src/io_helper.c
+SOURCE_FILES=src/median.c src/caspian.c src/result_set.c src/rawfile_coordinate_reader.c src/kd_tree.c src/data_handling.c src/reduction_functions.c src/grid.c src/gridding.c src/projector.c src/io_helper.c
 LDFLAGS=-lm -lproj
 CFLAGS=-std=c99 -Wall -Werror
 

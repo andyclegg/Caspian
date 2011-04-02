@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #include "kd_tree.h"
-#include "latlon_reader.h"
+#include "coordinate_reader.h"
 #include "result_set.h"
 #include "index.h"
 
@@ -449,18 +449,16 @@ static int recursive_build_kd_tree(kdtree *tree_p,unsigned int first_element,uns
  * Fill a constructed kdtree from the values found in the given reader.
  *
  * @param tree_p The constructed kdtree to fill.
- * @param reader The latlon_reader_t to read the values from.
+ * @param reader The coordinate_reader to read the values from.
  */
-void fill_tree_from_reader(kdtree *tree_p, latlon_reader_t *reader) {
-
-   unsigned int no_elements = latlon_reader_get_num_records(reader);
+void fill_tree_from_reader(kdtree *tree_p, coordinate_reader *reader) {
 
    observation *observations = tree_p->observations;
 
    register int result;
-   for(unsigned int current_index = 0; current_index < no_elements; current_index++) {
+   for(unsigned int current_index = 0; current_index < reader->num_records; current_index++) {
       observations[current_index].file_record_index = current_index;
-      result = latlon_reader_read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y], &observations[current_index].dimensions[T]);
+      result = reader->read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y], &observations[current_index].dimensions[T]);
       if (!result) {
          printf("Critical: Failed to read all elements from files\n");
          exit(-1);
@@ -468,7 +466,7 @@ void fill_tree_from_reader(kdtree *tree_p, latlon_reader_t *reader) {
    }
 
    // Call recursive_build_kd_tree, accross the entire range of data, with current element as 0, and current sort order as -1 (equivalent to unsorted)
-   recursive_build_kd_tree(tree_p, 0, no_elements - 1, 0, -1);
+   recursive_build_kd_tree(tree_p, 0, reader->num_records - 1, 0, -1);
 }
 
 /**
@@ -585,11 +583,11 @@ index *read_kdtree_index_from_file(FILE *input_file) {
 /**
  * Construct an adaptive kdtree from a set of geolocation information.
  *
- * @param reader A latlon_reader instance (source of gelocation information)
+ * @param reader A coordinate_reader instance (source of gelocation information)
  * @return Pointer to an index structure.
  */
-index *generate_kdtree_index_from_latlon_reader(latlon_reader_t *reader) {
-   kdtree *root_p = construct_tree(latlon_reader_get_num_records(reader));
+index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader) {
+   kdtree *root_p = construct_tree(reader->num_records);
 
    fill_tree_from_reader(root_p, reader);
 
