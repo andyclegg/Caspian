@@ -15,11 +15,18 @@
 #include "result_set.h"
 #include "index.h"
 
-#define LEFT_CHILD(index) (2*(index+1) - 1)
-#define RIGHT_CHILD(index) (2*(index+1))
+/** Generate the index of the left child of the given index, within a binary tree.*/
+#define LEFT_CHILD(index) (2*index +1)
+
+/** Generate the index of the right child of the given index, within a binary tree.*/
+#define RIGHT_CHILD(index) (2*index +2)
+
+/** Generate the index of the parent of the given index, within a binary tree.*/
 #define PARENT(index) (((index+1)/2) - 1)
+
 #define SQUARED(x) ((x)*(x))
 
+/** A format specifier for the on-disk binary file format. This should be incremented whenever the on-disk format changes.*/
 #define KDTREE_FILE_FORMAT 1
 
 void construct_tree(kdtree **tree_pp, unsigned int num_elements) {
