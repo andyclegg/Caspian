@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Implentation of a data structure which reads latitude/longitude/time observations, projects the latitude and longitude, and returns the results.
+ */
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -7,6 +13,14 @@
 
 #include "latlon_reader.h"
 
+/**
+ * Initialise the latitude/longitude reader from the given files, using a specified projector.
+ *
+ * @param lat_filename The path to the file containing latitudes (may be NULL).
+ * @param lon_filename The path to the file containing longitudes (may be NULL).
+ * @param time_filename The path to the file containing times (may be NULL).
+ * @return A pointer to an initialised latlon_reader_t.
+ */
 latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char *time_filename, projector *input_projector) {
 
    // Open the files for reading, check sizes
@@ -82,19 +96,39 @@ latlon_reader_t *latlon_reader_init(char *lat_filename, char *lon_filename, char
    return new_reader;
 }
 
+/*
+ * Free the latlon reader and close the associated files.
+ *
+ * @param reader The latlon reader to free.
+ */
 void latlon_reader_free(latlon_reader_t *reader) {
-
    // Close files
    fclose(reader->lat_file);
    fclose(reader->lon_file);
+   fclose(reader->time_file);
 
    free(reader);
 }
 
+/*
+ * Get the total number of records available from a latlon reader.
+ *
+ * @param reader The latlon reader to get the number of records from.
+ * @return The number of records.
+ */
 unsigned int latlon_reader_get_num_records(latlon_reader_t *reader) {
    return reader->num_records;
 }
 
+/*
+ * Read and project a single observation from a latlon reader.
+ *
+ * @param reader The latlon reader to read the observation from.
+ * @param x A float pointer specifying where the X value should be stored.
+ * @param y A float pointer specifying where the Y value should be stored.
+ * @param t A float pointer specifying where the T value should be stored.
+ * @return 0 if finished, 1 if more observations are available.
+ */
 int latlon_reader_read(latlon_reader_t *reader, float *x, float *y, float *t) {
    float latitude, longitude;
 
@@ -112,8 +146,10 @@ int latlon_reader_read(latlon_reader_t *reader, float *x, float *y, float *t) {
       exit(-1);
    }
 
+   // Project the horizontal coordinates
    projected_coordinates output = reader->input_projector->project(reader->input_projector, longitude, latitude);
 
+   // Store the projected results
    *y = (float) output.y;
    *x = (float) output.x;
 

@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Defines the latlon_reader.
+ */
 #ifndef  HEADER_LATLON_READER
 #define HEADER_LATLON_READER
 #include <stdio.h>
