@@ -3,11 +3,12 @@
  * @author Andrew Clegg
  *
  * Definition of the 'index' data type. Implementations are included elsewhere.
- * @see generate_kdtree_index_from_latlon_reader
+ * @see generate_kdtree_index_from_coordinate_reader
  */
 #ifndef HEADER_INDEX
 #define HEADER_INDEX
 #include <stdio.h>
+#include "projector.h"
 #include "result_set.h"
 
 typedef struct index_s{

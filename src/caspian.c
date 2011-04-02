@@ -14,12 +14,14 @@
 #include <string.h>
 #include <time.h>
 
+#include "coordinate_reader.h"
 #include "data_handling.h"
 #include "gridding.h"
 #include "grid.h"
 #include "io_helper.h"
 #include "kd_tree.h"
 #include "projector.h"
+#include "rawfile_coordinate_reader.h"
 #include "reduction_functions.h"
 
 /**
@@ -360,16 +362,11 @@ int main(int argc, char **argv) {
          return -1;
       }
 
-      latlon_reader_t *reader = latlon_reader_init(input_lat_filename, input_lon_filename, input_time_filename, input_projection);
-
-      if (reader == NULL) {
-         printf("Failed to initialise data reader\n");
-         return -1;
-      }
+      coordinate_reader *reader = get_coordinate_reader_from_files(input_lat_filename, input_lon_filename, input_time_filename, input_projection);
 
       printf("Building indices\n");
       start_time = time(NULL);
-      data_index = generate_kdtree_index_from_latlon_reader(reader);
+      data_index = generate_kdtree_index_from_coordinate_reader(reader);
       if (!data_index) {
          fprintf(stderr, "Failed to build index\n");
          return -1;
@@ -377,7 +374,7 @@ int main(int argc, char **argv) {
       end_time = time(NULL);
       printf("Building index took %d seconds\n", (int) (end_time - start_time));
 
-      latlon_reader_free(reader);
+      reader->free(reader);
 
       if (saving_index) {
          // Save to disk
