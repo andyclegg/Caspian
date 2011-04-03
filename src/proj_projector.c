@@ -1,10 +1,24 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Implementation of a PROJ.4-based projector
+ */
 #include <proj_api.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "projector.h"
+#include "proj_projector.h"
 
+/**
+ * Project a latitude/longitude pair to an X/Y pair
+ *
+ * @param p The proj-based projector to use.
+ * @param longitude The longitude part of the pair.
+ * @param latitude The latitude part of the pair.
+ * @return The projected coordinates.
+ */
 projected_coordinates _proj_project(projector *p, float longitude, float latitude) {
    projUV pj_input;
    pj_input.u = longitude * DEG_TO_RAD;
@@ -14,6 +28,14 @@ projected_coordinates _proj_project(projector *p, float longitude, float latitud
    return output;
 }
 
+/**
+ * Project an X/Y pair to a latitude/longitude pair
+ *
+ * @param p The proj-based projector to use.
+ * @param longitude The X part of the pair.
+ * @param latitude The Y part of the pair.
+ * @return The spherical coordinates.
+ */
 spherical_coordinates _proj_inverse_project(projector *p, float y, float x) {
    projUV pj_input;
    pj_input.u = y;
@@ -23,6 +45,16 @@ spherical_coordinates _proj_inverse_project(projector *p, float y, float x) {
    return output;
 }
 
+/**
+ * Serialise a proj-based projector a file.
+ *
+ * This function generates the canonical string representation of a proj projection,
+ * using the function pj_get_def; the length of the string followed by the string itself
+ * are then written to the file.
+ *
+ * @param p The proj-based projector to serialize.
+ * @param output_file The file to serialize the projector to.
+ */
 void _proj_serialize_to_file(projector *p, FILE *output_file) {
    projPJ *projection = (projPJ *) p->internals;
 
@@ -31,15 +63,24 @@ void _proj_serialize_to_file(projector *p, FILE *output_file) {
    unsigned int projection_string_length = strlen(projection_string) + 1;
    fwrite(&projection_string_length, sizeof(unsigned int), 1, output_file);
    fwrite(projection_string, sizeof(char), projection_string_length, output_file);
-
 }
 
+/**
+ * Free a proj-based projector.
+ *
+ * @param p The proj-based projector to free.
+ */
 void _proj_free(projector *p) {
    pj_free((projPJ *)p->internals);
    free(p);
 }
 
-
+/**
+ * Initialise a proj-based projector from a proj string.
+ *
+ * @param projection_string The proj compatible projection string.
+ * @return A pointer to an initialised projector.
+ */
 projector *get_proj_projector_from_string(char *projection_string) {
    projPJ *projection = pj_init_plus(projection_string);
    if (projection == NULL) {
@@ -57,6 +98,12 @@ projector *get_proj_projector_from_string(char *projection_string) {
    return p;
 }
 
+/**
+ * Initialise a proj-based projector as specified in the given file (as serialised by a proj-based projector.
+ *
+ * @param input_file The file which a proj-based projector has been serialised to.
+ * @return A poitner to an initialised projector.
+ */
 projector *get_proj_projector_from_file(FILE *input_file) {
    unsigned int projection_string_length;
    fread(&projection_string_length, sizeof(unsigned int), 1, input_file);
