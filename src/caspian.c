@@ -20,6 +20,7 @@
 #include "grid.h"
 #include "io_helper.h"
 #include "kd_tree.h"
+#include "proj_projector.h"
 #include "projector.h"
 #include "rawfile_coordinate_reader.h"
 #include "reduction_functions.h"

@@ -10,10 +10,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "kd_tree.h"
 #include "coordinate_reader.h"
-#include "result_set.h"
 #include "index.h"
+#include "kd_tree.h"
+#include "projector.h"
+#include "proj_projector.h"
+#include "result_set.h"
 
 /** Generate the index of the left child of the given index, within a binary tree.*/
 #define LEFT_CHILD(index) (2*index +1)
