@@ -1,4 +1,28 @@
 /**
+ * @mainpage
+ *
+ * @section intro_sec Introduction
+ * Caspian is written in a largely object-oriented fashion (although implemented in C, a language with no explicit object-orientation support); it consists of a number of interfaces and implementations of those interfaces. This documentation is intended to describe both interfaces and current implementations, as well as to provide a guide for providing new implementations of various interfaces.
+ * @section style_sec Code Style
+ * A typical aspect of Caspian (such as a grid, index or reduction function) is described using a struct, with members holding both data and function pointers. Many  of these structs will contain an opaque (void) pointer for storage of implementation-specific information. An implementation (for example, the kdtree implementation of an index) will normally provide a factory function, which allocates and initialises the struct, assigning the implementation's implementation of each method to the appropriate function pointer, and then returns the struct. In addition, each struct will contain an implementation-specific method to free or close the resources associated with that struct, such that each struct may be handled in a generic fashion throughout its lifetime.
+ * @section style_structure Structure
+ * Input data is read by a coordinate_reader, which projects the data using a \ref projector, and the results are stored in an \ref index. A \ref grid is then iterated over, querying the \ref index for a result_set of observations that fall within that \ref grid cell. The result_set is reduced to a single value by a reduction_function, and saved to the output.
+ *
+ * By default, coordinate_reader is implemented by \ref rawfile_coordinate_reader.h "a raw file backed reader", \ref projector is implemented by \ref proj_projector.h "the PROJ.4 library", and \ref index is implemented by \ref kd_tree.h "an adaptive kd-tree". A number of implementations of a reduction_function are included, namely \ref reduce_numeric_mean "mean", \ref reduce_numeric_weighted_mean "distance-weighted mean", \ref reduce_numeric_median "median", \ref reduce_coded_nearest_neighbour "nearest-neighbour", and \ref reduce_numeric_newest "newest".
+ * @section section_implementation Implementation Details
+ * @subsection section_implementation_dtypes Data Types
+ * Caspian is designed to handle data of various types and sizes, but to reduce the burden on reduction_function implementers, a system for representing and manipulating data of different types has been created. The types are split into two broad classes - data with a numeric interpretation, and data that should be handled opaquely (i.e. a collection of bits that must be preserved); these are known as numeric and coded data respectively.
+ *
+ * Numeric data is internally transformed into the data type represented by #NUMERIC_WORKING_TYPE - a floating point type of suitable precision for the machine architecture. By retrieving numeric input data using \ref numeric_get, an implementor of a reduction function can manipulate numeric data of any type using the #NUMERIC_WORKING_TYPE representation. Similarly, the reduction_function need only produce output in #NUMERIC_WORKING_TYPE format, and this will be automatically converted to the correct output representation.
+ *
+ * Coded data is merely given a unit size, and blocks of this data are copied around with no regard to the contents of each block. Reduction functions use \ref coded_get and \ref coded_put to retrieve the input data and store the output data.
+ *
+ * To facilitate the handling of these different types of data, the \ref dtype struct represents all information pertaining to a data type - this may be used by reduction functions to, for example, allocate a temporary storage area for coded data by using the dtype::size field to determine the amount of storage necessary.
+ * @subsection section_implementation_dimensions Dimensions
+ *
+ */
+
+/**
  * @file
  * @author Andrew Clegg
  *

@@ -39,6 +39,11 @@ void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, float *dimensi
    numeric_put(output_data, output_dtype, output_index, output_value);
 }
 
+/**
+ * Reduce coded data by using the nearest neighbour.
+ *
+ * @see reduction_function::call
+ */
 void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float lowest_distance = FLT_MAX;
    void *best_value = malloc(input_dtype.size);
@@ -71,6 +76,11 @@ void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, flo
    free(best_value);
 }
 
+/**
+ * Reduce numeric data by using the value with the last time stamp.
+ *
+ * @see reduction_function::call
+ */
 void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float latest = -FLT_MAX;
    register NUMERIC_WORKING_TYPE query_data_value;
@@ -93,6 +103,11 @@ void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, float *dimen
    numeric_put(output_data, output_dtype, output_index, newest_data_value);
 }
 
+/**
+ * Reduce numeric data by taking the median.
+ *
+ * @see reduction_function::call
+ */
 void reduce_numeric_median(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    unsigned int maximum_number_results = result_set_len(set); // maximum because some will be fill values
    unsigned int current_number_results = 0;
@@ -119,6 +134,11 @@ void reduce_numeric_median(result_set *set, reduction_attrs *attrs, float *dimen
    free(values);
 }
 
+/**
+ * Reduce numeric data by taking distance-weighted mean.
+ *
+ * @see reduction_function::call
+ */
 void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register NUMERIC_WORKING_TYPE current_sum = 0.0, total_distance = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value, current_distance; //Initialized on each loop
@@ -142,6 +162,12 @@ void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, float
    numeric_put(output_data, output_dtype, output_index, (total_distance == 0.0) ? attrs->output_fill_value : current_sum / total_distance);
 }
 
+/**
+ * Retrieve an instance of the named reduction_function.
+ *
+ * @param name The name of the reduction function.
+ * @return A reduction_function instance.
+ */
 reduction_function get_reduction_function_by_name(char *name) {
    static reduction_function reduction_functions[] = {
       {"undef", undef_type, NULL},
