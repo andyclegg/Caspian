@@ -423,6 +423,7 @@ int main(int argc, char **argv) {
       }
 
       in.input_dtype = input_dtype;
+      in.coordinate_index = data_index;
       out.output_dtype = output_dtype;
       out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->input_projector);
       if (out.grid_spec == NULL) {
@@ -432,7 +433,7 @@ int main(int argc, char **argv) {
       set_time_constraints(out.grid_spec, time_min, time_max);
 
       // Perform gridding
-      perform_gridding(in, out, selected_reduction_function, &r_attrs, data_index, verbosity);
+      perform_gridding(in, out, selected_reduction_function, &r_attrs, verbosity);
 
       // Unmap and close files
       if (write_data) {

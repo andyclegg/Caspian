@@ -9,6 +9,7 @@
 
 #include "data_handling.h"
 #include "grid.h"
+#include "index.h"
 
 /**
  * Represents a set of output data. This struct should be constructed manually.
@@ -31,14 +32,16 @@ typedef struct {
 
 /**
  * Represents a set of input data. This struct should be constructed manually.
- *
- * @todo Should this contain a reference to the index?
  */
 typedef struct {
    /** Pointer to memory where the input data is stored.*/
    char *data_input;
+
    /** The type of the data */
    dtype input_dtype;
+
+   /** The geospatial index for the input.*/
+   index *coordinate_index;
 } input_spec;
 
 #endif

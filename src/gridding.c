@@ -17,10 +17,9 @@
  * @param outspec Specification of the output grid.
  * @param reduce_func Selection reduction function.
  * @param attrs Attributes to be used by the reduction function.
- * @param data_index Spatial index to grid with.
  * @param verbose Set as >=1 for verbose output, 0 for silence.
  */
-void perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, index *data_index, int verbose) {
+void perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, int verbose) {
 
    if (verbose) printf("Building output image\n");
    time_t start_time = time(NULL);
@@ -46,14 +45,14 @@ void perform_gridding(input_spec inspec, output_spec outspec, reduction_function
          if (outspec.data_output != NULL) {
             float32_t query_dimensions[] = {bl_x, tr_x, bl_y, tr_y, outspec.grid_spec->time_min, outspec.grid_spec->time_max};
 
-            result_set *current_result_set = data_index->query(data_index, query_dimensions);
+            result_set *current_result_set = inspec.coordinate_index->query(inspec.coordinate_index, query_dimensions);
             reduce_func.call(current_result_set, attrs, query_dimensions, inspec.data_input, outspec.data_output, index, inspec.input_dtype, outspec.output_dtype);
             result_set_free(current_result_set);
          }
 
          if (outspec.lats_output != NULL || outspec.lons_output != NULL) {
             // Get the central latitude and longitude for this cell, and store
-            spherical_coordinates coords = data_index->input_projector->inverse_project(data_index->input_projector, (tr_y + bl_y) / 2.0, (tr_x + bl_x) / 2.0);
+            spherical_coordinates coords = inspec.coordinate_index->input_projector->inverse_project(inspec.coordinate_index->input_projector, (tr_y + bl_y) / 2.0, (tr_x + bl_x) / 2.0);
             if (outspec.lats_output != NULL) outspec.lats_output[index] = coords.latitude;
             if (outspec.lons_output != NULL) outspec.lons_output[index] = coords.longitude;
          }
