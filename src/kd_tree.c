@@ -278,11 +278,9 @@ void verify_tree(kdtree *tree_p) {
 
 /**
  * Query a kdtree for points within given bounds.
- *
- * @param toquery The kdtree to query.
- * @param dimension_bounds The bounds of the query - an array of floats (lower X, upper X, lower Y, upper Y, lower T, upper T).
- * @return A pointer to a result_set initialised with the query results.
+ * @see index::query
  */
+
 result_set *query_kdtree(index *toquery, float *dimension_bounds) {
    result_set *results = result_set_init();
    query_kdtree_at((kdtree *)(toquery->data_structure), dimension_bounds, results, 0);
@@ -292,9 +290,9 @@ result_set *query_kdtree(index *toquery, float *dimension_bounds) {
 /**
  * Compare two observations along a given comparison dimension.
  *
- * @param Pointer to the first observation to compare.
- * @param Pointer to the second observation to compare.
- * @param Integer to specify the dimension to sort on (e.g. #X, #Y)
+ * @param a Pointer to the first observation to compare.
+ * @param b Pointer to the second observation to compare.
+ * @param comparison_dimension Integer to specify the dimension to sort on (e.g. #X, #Y)
  * @return -1 if a < b, 0 if a == b, 1 if a > b
  */
 static int compare_observations(const void* a, const void* b, short int comparison_dimension) {
@@ -309,8 +307,8 @@ static int compare_observations(const void* a, const void* b, short int comparis
 /**
  * Compare two observations based on their latitude value. Compatible with qsort
  *
- * @param Pointer to the first observation to compare.
- * @param Pointer to the second observation to compare.
+ * @param a Pointer to the first observation to compare.
+ * @param b Pointer to the second observation to compare.
  * @return -1 if a < b, 0 if a == b, 1 if a > b
  */
 static int compare_latitudes(const void* a, const void* b) {
@@ -320,8 +318,8 @@ static int compare_latitudes(const void* a, const void* b) {
 /**
  * Compare two observations based on their longitude value. Compatible with qsort
  *
- * @param Pointer to the first observation to compare.
- * @param Pointer to the second observation to compare.
+ * @param a Pointer to the first observation to compare.
+ * @param b Pointer to the second observation to compare.
  * @return -1 if a < b, 0 if a == b, 1 if a > b
  */
 static int compare_longitudes(const void* a, const void* b) {

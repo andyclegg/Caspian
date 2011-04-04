@@ -17,13 +17,13 @@
  *
  * @param width The width in pixels.
  * @param height The height in pixels.
- * @vertical_resolution The vertical resolution in metres.
- * @horizontal_resolution The horizontal resolution in metres.
- * @vsample The vertical sampling size in metres.
- * @hsample The horizontal sampling size in metres.
- * @central_x The x-coordinate of the centre of the grid, in metres.
- * @central_y The y-coordinate of the centre of the grid, in metres.
- * @input_projector An initialised projector which transforms spherical coordinates to this grid.
+ * @param vertical_resolution The vertical resolution in metres.
+ * @param horizontal_resolution The horizontal resolution in metres.
+ * @param vsample The vertical sampling size in metres.
+ * @param hsample The horizontal sampling size in metres.
+ * @param central_x The x-coordinate of the centre of the grid, in metres.
+ * @param central_y The y-coordinate of the centre of the grid, in metres.
+ * @param input_projector An initialised projector which transforms spherical coordinates to this grid.
  * @return A pointer to the initialised grid.
  */
 grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projector *input_projector) {

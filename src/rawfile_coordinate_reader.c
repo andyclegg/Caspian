@@ -75,11 +75,12 @@ int _rawfile_coordinate_reader_read(coordinate_reader *source, float *x, float *
 }
 
 /**
- * Construct a coordinate readerfrom the given files, using a specified projector.
+ * Construct a coordinate reader from the given files, using a specified projector.
  *
  * @param lat_filename The path to the file containing latitudes (may be NULL).
  * @param lon_filename The path to the file containing longitudes (may be NULL).
  * @param time_filename The path to the file containing times (may be NULL).
+ * @param input_projector A projector to project the horizontal coordinates from the files into latitude/longitude space.
  * @return A pointer to an initialised coordinate_reader.
  */
 coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lon_filename, char *time_filename, projector *input_projector) {

@@ -81,10 +81,9 @@ static NUMERIC_WORKING_TYPE singleSelection(NUMERIC_WORKING_TYPE *values, int k,
  * However, this function only partially sorts the list until the desired item is known.
  *
  * @param values An array of NUMERIC_WORKING_TYPE floating point numbers.
+ * @param lenA The length of the array.
  * @param k1 The index of the first desired item; first <= k1 <= last.
  * @param k2 The index of the second desired item; first <= k2 <= last.
- * @param first The index of the first item in the selected sublist.
- * @param last The index of the last item in the selected sublist.
  * @return The mean of the values of k1 and k2.
  */
 static NUMERIC_WORKING_TYPE meanDoubleSelection(NUMERIC_WORKING_TYPE *values, int lenA, int k1, int k2)
