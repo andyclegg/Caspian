@@ -20,7 +20,6 @@ typedef struct index_s{
 
    /**
     * The projector used to project data from spherical coordinates into the X/Y domain used by this index.
-    * @todo This should probably be removed.
     */
    projector *input_projector;
 

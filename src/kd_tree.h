@@ -54,11 +54,6 @@ typedef struct {
    /** Pointer to a 1-dimensional array of observations.*/
    observation *observations;
 
-   /**
-    * The projector which projected these values
-    * @todo This really shouldn't be here.
-    */
-   projector *input_projector;
 } kdtree;
 
 index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader);
