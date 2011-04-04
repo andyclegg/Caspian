@@ -31,13 +31,16 @@ typedef enum {coded, numeric, undef_style} style;
  * Structure representing a dtype
  */
 typedef struct dtype_s {
-   /** The actual type of this dtype */
+   /** The actual format of this particular dtype. */
    dtype_t specifier;
-   /** The size of this dtype in bytes (for convenience) */
+
+   /** The size of a single item of data of this type, in bytes.*/
    size_t size;
-   /** The style of this dtype (numeric, coded) */
+
+   /** The style of this dtype (numeric, coded). */
    style type;
-   /** The string represention of this type (for convenience) */
+
+   /** The string represention of this type. */
    char* string;
 } dtype;
 
