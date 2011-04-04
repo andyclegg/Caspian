@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "coordinate_reader.h"
+#include "data_handling.h"
 #include "index.h"
 #include "kd_tree.h"
 #include "projector.h"

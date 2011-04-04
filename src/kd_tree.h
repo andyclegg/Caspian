@@ -59,24 +59,10 @@ typedef struct {
 index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader);
 index *read_kdtree_index_from_file(FILE *input_file);
 
-/** Define X as having index 0 (e.g. in arrays) */
-#define X  0
-
-/** Define Y as having index 1 (e.g. in arrays) */
-#define Y 1
-
-/** Define T as having index 2 (e.g. in arrays) */
-#define T 2
-
 /** Node tag for terminal (leaf) nodes */
 #define TERMINAL  3
 
 /** Node tag for unitialised nodes */
 #define UNINITIALISED 4
 
-/** Lower bounds positioned at dimension + 0 */
-#define LOWER 0
-
-/** Upper bounds positioned at dimension + 1 */
-#define UPPER 1
 #endif

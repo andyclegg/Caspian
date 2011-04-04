@@ -35,7 +35,7 @@ typedef struct {
     *
     * @param set The result set of observations which this function should reduce.
     * @param attrs A reduction_attrs instance.
-    * @param dimension_bounds The dimension bounds for the cell this function is producing a value for.
+    * @param bounds The dimension_bounds for the cell this function is producing a value for.
     * @param input_data Pointer to the memory where the input data is stored.
     * @param output_data Pointer to the memory where the output data is stored.
     * @param output_index The index in the output array where the reduced value should be stored.
@@ -45,7 +45,7 @@ typedef struct {
    void (*call)(
       result_set *set,
       reduction_attrs *attrs,
-      float *dimension_bounds,
+      dimension_bounds bounds,
       void *input_data,
       void *output_data,
       int output_index,
