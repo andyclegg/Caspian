@@ -10,7 +10,6 @@
  *
  * By default, coordinate_reader is implemented by \ref rawfile_coordinate_reader.h "a raw file backed reader", \ref projector is implemented by \ref proj_projector.h "the PROJ.4 library", and \ref index is implemented by \ref kd_tree.h "an adaptive kd-tree". A number of implementations of a reduction_function are included, namely \ref reduce_numeric_mean "mean", \ref reduce_numeric_weighted_mean "distance-weighted mean", \ref reduce_numeric_median "median", \ref reduce_coded_nearest_neighbour "nearest-neighbour", and \ref reduce_numeric_newest "newest".
  * @section section_implementation Implementation Details
- * @subsection section_implementation_dtypes Data Types
  * Caspian is designed to handle data of various types and sizes, but to reduce the burden on reduction_function implementers, a system for representing and manipulating data of different types has been created. The types are split into two broad classes - data with a numeric interpretation, and data that should be handled opaquely (i.e. a collection of bits that must be preserved); these are known as numeric and coded data respectively.
  *
  * Numeric data is internally transformed into the data type represented by #NUMERIC_WORKING_TYPE - a floating point type of suitable precision for the machine architecture. By retrieving numeric input data using \ref numeric_get, an implementor of a reduction function can manipulate numeric data of any type using the #NUMERIC_WORKING_TYPE representation. Similarly, the reduction_function need only produce output in #NUMERIC_WORKING_TYPE format, and this will be automatically converted to the correct output representation.
@@ -18,8 +17,6 @@
  * Coded data is merely given a unit size, and blocks of this data are copied around with no regard to the contents of each block. Reduction functions use \ref coded_get and \ref coded_put to retrieve the input data and store the output data.
  *
  * To facilitate the handling of these different types of data, the \ref dtype struct represents all information pertaining to a data type - this may be used by reduction functions to, for example, allocate a temporary storage area for coded data by using the dtype::size field to determine the amount of storage necessary.
- * @subsection section_implementation_dimensions Dimensions
- *
  */
 
 /**
