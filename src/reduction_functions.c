@@ -17,7 +17,7 @@
  *
  * @see reduction_function::call
  */
-void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register NUMERIC_WORKING_TYPE current_sum = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value;
    register unsigned int current_number_of_values = 0;
@@ -44,13 +44,13 @@ void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, float *dimensi
  *
  * @see reduction_function::call
  */
-void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float lowest_distance = FLT_MAX;
    void *best_value = malloc(input_dtype.size);
    register short int value_stored = 0;
 
-   float32_t central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
-   float32_t central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
+   float32_t central_x = (bounds[X + LOWER] + bounds[X + UPPER]) / 2.0;
+   float32_t central_y = (bounds[Y + LOWER] + bounds[Y + UPPER]) / 2.0;
 
    result_set_item *current_item;
 
@@ -81,7 +81,7 @@ void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, flo
  *
  * @see reduction_function::call
  */
-void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float latest = -FLT_MAX;
    register NUMERIC_WORKING_TYPE query_data_value;
    register NUMERIC_WORKING_TYPE newest_data_value = attrs->output_fill_value;
@@ -108,7 +108,7 @@ void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, float *dimen
  *
  * @see reduction_function::call
  */
-void reduce_numeric_median(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_median(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    unsigned int maximum_number_results = result_set_len(set); // maximum because some will be fill values
    unsigned int current_number_results = 0;
    register NUMERIC_WORKING_TYPE query_data_value;
@@ -139,12 +139,12 @@ void reduce_numeric_median(result_set *set, reduction_attrs *attrs, float *dimen
  *
  * @see reduction_function::call
  */
-void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register NUMERIC_WORKING_TYPE current_sum = 0.0, total_distance = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value, current_distance; //Initialized on each loop
 
-   NUMERIC_WORKING_TYPE central_x = (dimension_bounds[0] + dimension_bounds[1]) / 2.0;
-   NUMERIC_WORKING_TYPE central_y = (dimension_bounds[2] + dimension_bounds[3]) / 2.0;
+   NUMERIC_WORKING_TYPE central_x = (bounds[X + LOWER] + bounds[X + UPPER]) / 2.0;
+   NUMERIC_WORKING_TYPE central_y = (bounds[Y + LOWER] + bounds[Y + UPPER]) / 2.0;
 
    result_set_item *current_item;
 

@@ -56,6 +56,28 @@ typedef struct dtype_s {
 #define NUMERIC_WORKING_TYPE float32_t
 #endif
 
+/** Define X as having index 0 (e.g. in arrays) */
+#define X  0
+
+/** Define Y as having index 1 (e.g. in arrays) */
+#define Y 1
+
+/** Define T as having index 2 (e.g. in arrays) */
+#define T 2
+
+/** Lower bounds positioned at dimension + 0 */
+#define LOWER 0
+
+/** Upper bounds positioned at dimension + 1 */
+#define UPPER 1
+
+/**
+ * Define a type for dimension bounds.
+ *
+ * Dimension bounds are given as an array of floating point numbers. For each dimension, a lower and upper bound are required. The numbers are ordered as {x-lower, x-upper, y-lower, y-upper, t-lower, t-upper} (and this may be extended for more dimensions if necessary).
+ */
+typedef float *dimension_bounds;
+
 NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index);
 void coded_get(void *data, dtype input_dtype, int index, void *output);
 void coded_put(void *data, dtype output_dtype, int index, void *input);
