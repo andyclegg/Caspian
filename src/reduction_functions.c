@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Andrew Clegg
+ *
+ * Implementation of various reduction algorithms.
+ */
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
@@ -6,6 +12,11 @@
 #include "median.h"
 #include "reduction_functions.h"
 
+/**
+ * Reduce numeric data by taking the mean.
+ *
+ * @see reduction_function::call
+ */
 void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, float *dimension_bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register NUMERIC_WORKING_TYPE current_sum = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value;

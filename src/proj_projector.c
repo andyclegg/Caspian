@@ -32,8 +32,8 @@ projected_coordinates _proj_project(projector *p, float longitude, float latitud
  * Project an X/Y pair to a latitude/longitude pair
  *
  * @param p The proj-based projector to use.
- * @param longitude The X part of the pair.
- * @param latitude The Y part of the pair.
+ * @param y The Y part of the pair.
+ * @param x The X part of the pair.
  * @return The spherical coordinates.
  */
 spherical_coordinates _proj_inverse_project(projector *p, float y, float x) {
