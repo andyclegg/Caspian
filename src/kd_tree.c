@@ -483,7 +483,7 @@ void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
    fwrite(&file_format_number, sizeof(unsigned int), 1, output_file);
 
    // Serialize the projector to the file
-   tree_p->input_projector->serialize_to_file(tree_p->input_projector, output_file);
+   towrite->input_projector->serialize_to_file(towrite->input_projector, output_file);
 
    // Write the sizes of the data
    fwrite(&tree_p->num_elements, sizeof(unsigned int), 1, output_file);
