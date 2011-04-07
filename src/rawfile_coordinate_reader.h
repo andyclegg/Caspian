@@ -28,5 +28,6 @@ typedef struct rawfile_coordinate_reader_s {
    unsigned int current_record;
 } rawfile_coordinate_reader;
 
+// Function prototype - implementation in rawfile_coordinate_reader.c
 coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lon_filename, char *time_filename, projector *input_projection);
 #endif
