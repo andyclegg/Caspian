@@ -2,7 +2,9 @@ SOURCE_FILES=src/median.c src/caspian.c src/result_set.c src/rawfile_coordinate_
 LDFLAGS=-lm -lproj
 CFLAGS=-std=c99 -Wall -Werror
 
-all: caspian quickview
+minimal: caspian quickview
+all: caspian projcalc debug docs quickview
+
 
 caspian: bin/caspian
 projcalc: bin/projcalc
