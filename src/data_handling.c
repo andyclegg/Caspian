@@ -57,7 +57,12 @@ NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index) {
  * @param data_item The number to be stored
  */
 void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE data_item) {
+
+   // Shortcut macro - cast the data to the appropriate type and
+   // store it in a similarly-cast array. In this way, the index
+   // will resolve properly
    #define put(type) ((type *) data)[index] = (type) data_item
+
    switch (output_dtype.specifier) {
       case uint8:
          put(uint8_t);
@@ -107,6 +112,9 @@ void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE
  * @param output Pointer to where the retrieved data should be stored
  */
 void coded_get(void *data, dtype input_dtype, int index, void *output) {
+   // Cast the data to char (so that bytes can be indexed), calculate
+   // the correct offset, then copy the data from that offset to the
+   // specified memory address
    memcpy(output, &((char *) data)[index*input_dtype.size], input_dtype.size);
 }
 
@@ -135,9 +143,16 @@ void coded_put(void *data, dtype output_dtype, int index, void *input) {
  * @return A dtype struct representing the parsed dtype.
  */
 dtype dtype_string_parse(char *dtype_string) {
+
+   // Storage for the parsed dtype
    dtype output;
+
+   // Has the dtype string been parsed?
    int parsed = 0;
-   #define parse(ttyyppee, ssiizzee, ssttyyllee) if(strcmp(#ttyyppee, dtype_string) == 0) { output.specifier = ttyyppee; output.size = ssiizzee; output.type = ssttyyllee; output.string = #ttyyppee; parsed = 1;}
+
+   // Shortcut - compare the dtype_string to the data type name, if it
+   // matches then store the dtype and set parsed to 1
+   #define parse(_type_, _size_, _style_) if(strcmp(#_type_, dtype_string) == 0) { output.specifier = _type_; output.size = _size_; output.type = _style_; output.string = #_type_; parsed = 1;}
    parse(uint8, 1, numeric);
    parse(uint16, 2, numeric);
    parse(uint32, 4, numeric);
