@@ -15,15 +15,21 @@
  * Project a latitude/longitude pair to an X/Y pair
  *
  * @param p The proj-based projector to use.
- * @param longitude The longitude part of the pair.
- * @param latitude The latitude part of the pair.
+ * @param longitude The longitude part of the pair (degrees).
+ * @param latitude The latitude part of the pair (degrees).
  * @return The projected coordinates.
  */
 projected_coordinates _proj_project(projector *p, float longitude, float latitude) {
+
+   // Construct a proj-compatible input, converting degrees to radians
+   // at the same time
    projUV pj_input;
    pj_input.u = longitude * DEG_TO_RAD;
    pj_input.v = latitude * DEG_TO_RAD;
+
+   // Project the input coordinates
    projUV pj_output = pj_fwd(pj_input, (projUV *) p->internals);
+
    projected_coordinates output = {pj_output.v, pj_output.u};
    return output;
 }
@@ -32,15 +38,20 @@ projected_coordinates _proj_project(projector *p, float longitude, float latitud
  * Project an X/Y pair to a latitude/longitude pair
  *
  * @param p The proj-based projector to use.
- * @param y The Y part of the pair.
- * @param x The X part of the pair.
+ * @param y The Y part of the pair (metres).
+ * @param x The X part of the pair (metres).
  * @return The spherical coordinates.
  */
 spherical_coordinates _proj_inverse_project(projector *p, float y, float x) {
+   // Construct a proj-compatible input
    projUV pj_input;
    pj_input.u = y;
    pj_input.v = x;
+
+   // Project the coordinates
    projUV pj_output = pj_inv(pj_input, (projUV *) p->internals);
+
+   // Convert the result back to degrees
    spherical_coordinates output = {pj_output.u * RAD_TO_DEG, pj_output.v * RAD_TO_DEG};
    return output;
 }
@@ -58,9 +69,13 @@ spherical_coordinates _proj_inverse_project(projector *p, float y, float x) {
 void _proj_serialize_to_file(projector *p, FILE *output_file) {
    projPJ *projection = (projPJ *) p->internals;
 
-   // Write the projection string length and string to file
+   // Get the canonnical representation of the projection string
    char *projection_string = pj_get_def(projection, 0);
+
+   // Calculate the length of the string, including the null terminator
    unsigned int projection_string_length = strlen(projection_string) + 1;
+
+   // Write the projection string length and string to file
    fwrite(&projection_string_length, sizeof(unsigned int), 1, output_file);
    fwrite(projection_string, sizeof(char), projection_string_length, output_file);
 }
@@ -102,7 +117,7 @@ projector *get_proj_projector_from_string(char *projection_string) {
  * Initialise a proj-based projector as specified in the given file (as serialised by a proj-based projector.
  *
  * @param input_file The file which a proj-based projector has been serialised to.
- * @return A poitner to an initialised projector.
+ * @return A pointer to an initialised projector.
  */
 projector *get_proj_projector_from_file(FILE *input_file) {
    unsigned int projection_string_length;

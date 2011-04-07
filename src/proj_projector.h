@@ -10,6 +10,7 @@
 
 #include "projector.h"
 
+// Function prototypes - implementations in proj_projector.c
 projector *get_proj_projector_from_string(char *projection_string);
 projector *get_proj_projector_from_file(FILE *input_file);
 #endif
