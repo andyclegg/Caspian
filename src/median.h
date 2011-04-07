@@ -7,5 +7,6 @@
 
 #include "data_handling.h"
 
-NUMERIC_WORKING_TYPE median(NUMERIC_WORKING_TYPE *values, int lenA);
+// Function prototype - implementation in median.c
+NUMERIC_WORKING_TYPE median(NUMERIC_WORKING_TYPE *values, int length);
 #endif
