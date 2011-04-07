@@ -120,113 +120,156 @@ void help(char *executable) {
  */
 int main(int argc, char **argv) {
 
-   char *input_data_filename = NULL, *input_lat_filename = NULL, *input_lon_filename = NULL, *input_time_filename = NULL;
-   char *output_data_filename = NULL, *output_lat_filename = NULL, *output_lon_filename = NULL;
-   int write_lats = 0, write_lons = 0, write_data = 0;
-   char *input_index_filename = NULL, *output_index_filename = NULL;
-   int loading_index = 0, saving_index = 0;
-   int generating_image = 0;
-   char *projection_string = "+proj=eqc +datum=WGS84";
-   int using_default_projection_string = 1;
-   int width = 720, height = 360;
-   double horizontal_resolution = 0.0, vertical_resolution = 0.0;
-   double horizontal_sampling = 0.0, vertical_sampling = 0.0;
-   double central_x = 0.0, central_y = 0.0;
-   dtype input_dtype = {float32, 4, numeric, "float32"}, output_dtype = {float32, 4, numeric, "float32"};
-   reduction_function selected_reduction_function = get_reduction_function_by_name("mean");
-   NUMERIC_WORKING_TYPE input_fill_value = -999.0, output_fill_value = -999.0;
-   int verbosity = 0;
-   float time_min = -INFINITY, time_max = +INFINITY;
-   time_t start_time, end_time;
-
-   // Paranoid dtype checks
+   // Initialization checks for paranoia
    if (sizeof(float32_t) != 4 || sizeof(float64_t) != 8) {
       printf("Unsupported system: 'float' and 'double' not 4 and 8 bytes respectively\n");
    }
 
-   int curarg, option_index = 0;
+   /*****************************************
+    *  Command line options                 *
+    ****************************************/
+
+   // Setup variables to store command line options, and default values
+
+   // Index controls
+   char *input_lat_filename = NULL;
+   char *input_lon_filename = NULL;
+   char *input_time_filename = NULL;
+   char *projection_string = "+proj=eqc +datum=WGS84";
+   char *output_index_filename = NULL;
+   char *input_index_filename = NULL;
+
+   // Input data
+   char *input_data_filename = NULL;
+   dtype input_dtype = {float32, 4, numeric, "float32"};
+   NUMERIC_WORKING_TYPE input_fill_value = -999.0;
+
+   // Output data
+   char *output_data_filename = NULL;
+   dtype output_dtype = {float32, 4, numeric, "float32"};
+   NUMERIC_WORKING_TYPE output_fill_value = -999.0;
+   char *output_lat_filename = NULL;
+   char *output_lon_filename = NULL;
+
+   // Image generation
+   int height = 360;
+   int width = 720;
+   double vertical_resolution = 0.0; // Default is calculated later
+   double horizontal_resolution = 0.0; // Default is calculated later
+   double central_y = 0.0;
+   double central_x = 0.0;
+   double vertical_sampling = 0.0; // Default is calculated later
+   double horizontal_sampling = 0.0; // Default is calculated later
+   reduction_function selected_reduction_function = get_reduction_function_by_name("mean");
+   float time_min = -INFINITY;
+   float time_max = +INFINITY;
+
+   // General
+   int verbosity = 0;
+
+
+   // Control flow variables
+   int generating_image = 0;
+   int loading_index = 0;
+   int saving_index = 0;
+   int using_default_projection_string = 1;
+   int write_data = 0;
+   int write_lats = 0;
+   int write_lons = 0;
+
+
    // Parse command line arguments
    static struct option long_options[] = {
-      {"input-data", 1, 0, 'd'},
+      // Index controls
       {"input-lats", 1, 0, 'a'},
       {"input-lons", 1, 0, 'o'},
       {"input-time", 1, 0, 'e'},
+      {"projection", 1, 0, 'p'},
+      {"save-index", 1, 0, 'I'},
+      {"load-index", 1, 0, 'i'},
+
+      // Input data
+      {"input-data", 1, 0, 'd'},
+      {"input-dtype", 1, 0, 't'},
+      {"input-fill-value", 1, 0, 'f'},
+
+      // Output data
       {"output-data", 1, 0, 'D'},
+      {"output-dtype", 1, 0, 'T'},
+      {"output-fill-value", 1, 0, 'F'},
       {"output-lats", 1, 0, 'A'},
       {"output-lons", 1, 0, 'O'},
-      {"reduction-function", 1, 0, 'r'},
-      {"projection", 1, 0, 'p'},
-      {"width", 1, 0, 'w'},
+
+      // Image generation
       {"height", 1, 0, 'h'},
-      {"hres", 1, 0, 'H'},
+      {"width", 1, 0, 'w'},
       {"vres", 1, 0, 'V'},
-      {"input-dtype", 1, 0, 't'},
-      {"output-dtype", 1, 0, 'T'},
-      {"input-fill-value", 1, 0, 'f'},
-      {"output-fill-value", 1, 0, 'F'},
-      {"central-x", 1, 0, 'x'},
+      {"hres", 1, 0, 'H'},
       {"central-y", 1, 0, 'y'},
-      {"hsample", 1, 0, 's'},
+      {"central-x", 1, 0, 'x'},
       {"vsample", 1, 0, 'S'},
-      {"load-index", 1, 0, 'i'},
-      {"save-index", 1, 0, 'I'},
-      {"help", 0, 0, '?'},
-      {"verbose", 0, 0, '+'},
+      {"hsample", 1, 0, 's'},
+      {"reduction-function", 1, 0, 'r'},
       {"time-min", 1, 0, 'q'},
       {"time-max", 1, 0, 'Q'},
+
+      // General
+      {"verbose", 0, 0, '+'},
+      {"help", 0, 0, '?'},
    };
 
-   #define save_optarg_string(x) x = calloc(strlen(optarg) + 1, sizeof(char)); strcpy(x, optarg)
+   // Shortcut macro - allocate and check storage for the option string,
+   // and copy the option string into the allocated space.
+   #define save_optarg_string(x) x = calloc(strlen(optarg) + 1, sizeof(char)); if (x == NULL) { fprintf(stderr, "Failed to allocate space to store option string"); exit(-1); }; strcpy(x, optarg)
 
+   int curarg, option_index = 0;
    while((curarg = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
       switch (curarg) {
-         case 'q':
-            time_min = atof(optarg);
-            break;
-         case 'Q':
-            time_max = atof(optarg);
-            break;
-         case 'e':
-            save_optarg_string(input_time_filename);
-            break;
-         case '+':
-            verbosity++;
-            break;
-         case '?':
-            help(argv[0]);
-            return 0;
-         case 'r': // Reduction function
-            selected_reduction_function = get_reduction_function_by_name(optarg);
-            if (reduction_function_is_undef(selected_reduction_function)) {
-               fprintf(stderr, "Unknown reduction function '%s'\n", optarg);
-               exit(-1);
-            }
-            break;
-         case 'i':
-            save_optarg_string(input_index_filename);
-            loading_index = 1;
-            break;
-         case 'I':
-            save_optarg_string(output_index_filename);
-            saving_index = 1;
-            break;
-         case 'p':
-            save_optarg_string(projection_string);
-            using_default_projection_string = 0;
-            break;
-         case 'd':
-            save_optarg_string(input_data_filename);
-            break;
+         // Index controls
          case 'a':
             save_optarg_string(input_lat_filename);
             break;
          case 'o':
             save_optarg_string(input_lon_filename);
             break;
+         case 'e':
+            save_optarg_string(input_time_filename);
+            break;
+         case 'p':
+            save_optarg_string(projection_string);
+            using_default_projection_string = 0;
+            break;
+         case 'I':
+            save_optarg_string(output_index_filename);
+            saving_index = 1;
+            break;
+         case 'i':
+            save_optarg_string(input_index_filename);
+            loading_index = 1;
+            break;
+
+         // Input data
+         case 'd':
+            save_optarg_string(input_data_filename);
+            break;
+         case 't':
+            input_dtype = dtype_string_parse(optarg);
+            break;
+         case 'f':
+            input_fill_value = atof(optarg);
+            break;
+
+         // Output data
          case 'D':
             save_optarg_string(output_data_filename);
             generating_image = 1;
             write_data = 1;
+            break;
+         case 'T':
+            output_dtype = dtype_string_parse(optarg);
+            break;
+         case 'F':
+            output_fill_value = atof(optarg);
             break;
          case 'A':
             save_optarg_string(output_lat_filename);
@@ -238,13 +281,8 @@ int main(int argc, char **argv) {
             generating_image = 1;
             write_lons = 1;
             break;
-         case 'w':
-            width = atoi(optarg);
-            if (width <= 0) {
-               fprintf(stderr, "Width must be a positive integer (got %d)\n", width);
-               exit(-1);
-            }
-            break;
+
+         // Image generation
          case 'h':
             height = atoi(optarg);
             if (height <= 0) {
@@ -252,10 +290,10 @@ int main(int argc, char **argv) {
                exit(-1);
             }
             break;
-         case 'H':
-            horizontal_resolution = atof(optarg);
-            if (horizontal_resolution <= 0.0) {
-               fprintf(stderr, "Horizontal resolution must be a positive number (got %f)\n", horizontal_resolution);
+         case 'w':
+            width = atoi(optarg);
+            if (width <= 0) {
+               fprintf(stderr, "Width must be a positive integer (got %d)\n", width);
                exit(-1);
             }
             break;
@@ -266,30 +304,18 @@ int main(int argc, char **argv) {
                exit(-1);
             }
             break;
-         case 'x':
-            central_x = atof(optarg);
+         case 'H':
+            horizontal_resolution = atof(optarg);
+            if (horizontal_resolution <= 0.0) {
+               fprintf(stderr, "Horizontal resolution must be a positive number (got %f)\n", horizontal_resolution);
+               exit(-1);
+            }
             break;
          case 'y':
             central_y = atof(optarg);
             break;
-         case 't':
-            input_dtype = dtype_string_parse(optarg);
-            break;
-         case 'T':
-            output_dtype = dtype_string_parse(optarg);
-            break;
-         case 'f':
-            input_fill_value = atof(optarg);
-            break;
-         case 'F':
-            output_fill_value = atof(optarg);
-            break;
-         case 's':
-            horizontal_sampling = atof(optarg);
-            if (horizontal_sampling <= 0.0) {
-               fprintf(stderr, "Horizontal sampling resolution must be a positive number (got %f)\n", horizontal_sampling);
-               exit(-1);
-            }
+         case 'x':
+            central_x = atof(optarg);
             break;
          case 'S':
             vertical_sampling = atof(optarg);
@@ -298,6 +324,35 @@ int main(int argc, char **argv) {
                exit(-1);
             }
             break;
+         case 's':
+            horizontal_sampling = atof(optarg);
+            if (horizontal_sampling <= 0.0) {
+               fprintf(stderr, "Horizontal sampling resolution must be a positive number (got %f)\n", horizontal_sampling);
+               exit(-1);
+            }
+            break;
+         case 'r': // Reduction function
+            selected_reduction_function = get_reduction_function_by_name(optarg);
+            if (reduction_function_is_undef(selected_reduction_function)) {
+               fprintf(stderr, "Unknown reduction function '%s'\n", optarg);
+               exit(-1);
+            }
+            break;
+         case 'q':
+            time_min = atof(optarg);
+            break;
+         case 'Q':
+            time_max = atof(optarg);
+            break;
+
+         // General
+         case '+':
+            verbosity++;
+            break;
+         case '?':
+            help(argv[0]);
+            return 0;
+
          default:
             printf("Unrecognised option\n");
             help(argv[0]);
@@ -305,25 +360,28 @@ int main(int argc, char **argv) {
       }
    }
 
+   #ifdef DEBUG
+   // Print the control flow variables
+   printf("generating image: %d\n", generating_image);
+   printf("loading index: %d\n", loading_index);
+   printf("saving index: %d\n", saving_index);
+   printf("using default projection string: %d\n", using_default_projection_string);
+   printf("writing data: %d\n", write_data);
+   printf("writing lats: %d\n", write_lats);
+   printf("writing lons: %d\n", write_lons);
+   #endif
+
    // Check we have required options - required options depends on mode of operation
-   if (saving_index || (generating_image && !loading_index)) {
+   if (!loading_index) {
       if (input_lat_filename == NULL || input_lon_filename == NULL || projection_string == NULL) {
-         char *message;
-         if (saving_index) {
-            message = "To generate an index,";
-         } else {
-            message = "To generate an image without loading an index,";
-         }
-         fprintf(stderr, "%s you must provide --input-lats, --input-lons, --input-time, and --projection\n", saving_index ? "To generate an index," : "To generate an image without loading an index");
-         help(argv[0]);
+         fprintf(stderr, "Unless you are loading a pre-generated index from disk, you must provide --input-lats, --input-lons, --input-time, and --projection\nSee --help for more information.\n");
          return -1;
       }
    }
 
    if (generating_image) {
       if (input_data_filename == NULL || output_data_filename == NULL) {
-         fprintf(stderr, "When generating an image, you must provide --input-data and --output-data\n");
-         help(argv[0]);
+         fprintf(stderr, "When generating an image, you must provide --input-data and --output-data\nSee --help for more information.");
          return -1;
       }
    }
@@ -348,24 +406,9 @@ int main(int argc, char **argv) {
       vertical_resolution = WGS84_POLAR_CIRCUMFERENCE / (2.0 * (float) height);
    }
 
-   if (verbosity > 0) {
-      printf("Start up parameters:\n");
-      printf("Input Data filename: %s\n", input_data_filename);
-      printf("Input Lats filename: %s\n", input_lat_filename);
-      printf("Input Lons filename: %s\n", input_lon_filename);
-      printf("Output Data filename: %s\n", output_data_filename);
-      printf("Output Lats filename: %s\n", output_lat_filename);
-      printf("Output Lons filename: %s\n", output_lon_filename);
-      printf("Projection String: %s\n", projection_string);
-      printf("Width/Height: %d/%d\n", width, height);
-      printf("Horizontal/Vertical Resolution: %f/%f\n", horizontal_resolution, vertical_resolution);
-   }
-
-
-   // Reduction options
-   reduction_attrs r_attrs;
-   r_attrs.input_fill_value = input_fill_value;
-   r_attrs.output_fill_value = output_fill_value;
+   /*****************************************
+    * Index (load or generate)              *
+    ****************************************/
 
    index *data_index = NULL;
 
@@ -375,6 +418,8 @@ int main(int argc, char **argv) {
       data_index = read_kdtree_index_from_file(input_index_file);
       fclose(input_index_file);
    } else {
+      // Generate the index in memory
+
       // Initialize the projection
       projector *input_projection = get_proj_projector_from_string(projection_string);
       if (input_projection == NULL) {
@@ -382,30 +427,37 @@ int main(int argc, char **argv) {
          return -1;
       }
 
+      // Build a coordinate reader
       coordinate_reader *reader = get_coordinate_reader_from_files(input_lat_filename, input_lon_filename, input_time_filename, input_projection);
 
-      printf("Building indices\n");
-      start_time = time(NULL);
+      // Build the index (kdtree is currently hardcoded)
+      if (verbosity > 0) printf("Building indices\n");
+      time_t start_time = time(NULL);
       data_index = generate_kdtree_index_from_coordinate_reader(reader);
       if (!data_index) {
          fprintf(stderr, "Failed to build index\n");
          return -1;
       }
-      end_time = time(NULL);
-      printf("Building index took %d seconds\n", (int) (end_time - start_time));
+      time_t end_time = time(NULL);
+      if (verbosity > 0) printf("Building index took %d seconds\n", (int) (end_time - start_time));
 
+      // Get rid of the coordinate reader - no longer needed
       reader->free(reader);
 
       if (saving_index) {
-         // Save to disk
+         // Save the index to disk
          FILE *output_index_file = fopen(output_index_filename, "w");
          data_index->write_to_file(data_index, output_index_file);
          fclose(output_index_file);
       }
    }
 
-   if (generating_image) {
+   /*****************************************
+    * Generate image                        *
+    ****************************************/
 
+   if (generating_image) {
+      // Calculate file sizes from provided information
       unsigned int input_data_number_bytes = data_index->num_elements * input_dtype.size;
       unsigned int output_data_number_bytes = width * height * output_dtype.size;
       unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
@@ -414,7 +466,17 @@ int main(int argc, char **argv) {
 
       // Setup input and output specs, and open files
       input_spec in;
+      in.input_dtype = input_dtype;
+      in.coordinate_index = data_index;
+
       output_spec out;
+      out.output_dtype = output_dtype;
+      out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->input_projector);
+      if (out.grid_spec == NULL) {
+         fprintf(stderr, "Failed to initialise output grid\n");
+         return -1;
+      }
+      set_time_constraints(out.grid_spec, time_min, time_max);
 
       if (write_data) {
          data_input_file = open_memory_mapped_input_file(input_data_filename, input_data_number_bytes);
@@ -441,15 +503,10 @@ int main(int argc, char **argv) {
          out.lons_output = NULL;
       }
 
-      in.input_dtype = input_dtype;
-      in.coordinate_index = data_index;
-      out.output_dtype = output_dtype;
-      out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->input_projector);
-      if (out.grid_spec == NULL) {
-         fprintf(stderr, "Failed to initialise output grid\n");
-         return -1;
-      }
-      set_time_constraints(out.grid_spec, time_min, time_max);
+      // Setup reduction options
+      reduction_attrs r_attrs;
+      r_attrs.input_fill_value = input_fill_value;
+      r_attrs.output_fill_value = output_fill_value;
 
       // Perform gridding
       perform_gridding(in, out, selected_reduction_function, &r_attrs, verbosity);
@@ -469,9 +526,12 @@ int main(int argc, char **argv) {
 
    // Free option strings and working data
    free(input_data_filename);
+   free(input_index_filename);
    free(input_lat_filename);
    free(input_lon_filename);
+   free(input_time_filename);
    free(output_data_filename);
+   free(output_index_filename);
    free(output_lat_filename);
    free(output_lon_filename);
    if (!using_default_projection_string) free(projection_string);
