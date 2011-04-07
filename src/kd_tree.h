@@ -12,7 +12,7 @@
 #include "result_set.h"
 
 /**
- * Defines a node of an adaptive kdtree.
+ * A node of an adaptive KDtree.
  */
 typedef struct {
    /** A tag representing the type of this node. Internal nodes are impliclty defined by the use of #X or #Y (defining the dimension on which this node discriminates). Leaf nodes are #TERMINAL or #UNINITIALISED.*/
@@ -40,7 +40,7 @@ typedef struct {
 } observation;
 
 /**
- * Representation of an adaptive kdtree.
+ * An adaptive KDtree index.
  */
 typedef struct {
    /** The number of observations represented by this tree.*/

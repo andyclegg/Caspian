@@ -13,6 +13,8 @@
 
 /**
  * Define the rawfile-specific portion of a coordinate_reader.
+ *
+ * @see get_coordinate_reader_from_files
  */
 typedef struct rawfile_coordinate_reader_s {
    /** The 32-bit float file to read latitudes from.*/
