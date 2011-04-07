@@ -78,6 +78,7 @@ typedef struct dtype_s {
  */
 typedef float *dimension_bounds;
 
+// Function prototypes - implemented in data_handling.c
 NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index);
 void coded_get(void *data, dtype input_dtype, int index, void *output);
 void coded_put(void *data, dtype output_dtype, int index, void *input);

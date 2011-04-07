@@ -61,6 +61,7 @@ typedef struct {
    projector *input_projector;
 } grid;
 
+// Function prototypes - implementations in grid.c
 grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projector *input_projector);
 void set_time_constraints(grid *output_grid, float min, float max);
 void free_grid(grid *tofree);
