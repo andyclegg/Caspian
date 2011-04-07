@@ -43,7 +43,10 @@ void result_set_insert(result_set *set, float x, float y, float t, int record_in
    new_item->next = NULL;
 
    //Add the new item in at the appropriate position
+
+   // Acquire the write lock
    pthread_mutex_lock(&set->write_lock);
+
    if (set->head == NULL) {
       set->head = new_item; // Store the start of the list
       set->current = new_item; // Set 'current' at start of list
@@ -53,6 +56,8 @@ void result_set_insert(result_set *set, float x, float y, float t, int record_in
       set->tail = new_item;
    }
    set->length++;
+
+   // Release the write lock
    pthread_mutex_unlock(&set->write_lock);
 }
 
@@ -63,7 +68,10 @@ void result_set_insert(result_set *set, float x, float y, float t, int record_in
  * @return A pointer to the next result_set_item.
  */
 result_set_item *result_set_iterate(result_set *set) {
+   // Get the value which will be returned (possibly NULL)
    result_set_item *to_return = set->current;
+
+   // Advance the current pointer on to the next value
    if (set->current != NULL) {
       set->current = set->current->next;
    }
@@ -76,12 +84,15 @@ result_set_item *result_set_iterate(result_set *set) {
  * @param set The result_set to free.
  */
 void result_set_free(result_set *set) {
+   // Iterate over the linked list, freeing each item
    set->current = set->head;
    while (set->current != NULL) {
       result_set_item *next = set->current->next;
       free(set->current);
       set->current = next;
    }
+
+   // Free the result set itself
    free(set);
 }
 
