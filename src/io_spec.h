@@ -27,6 +27,7 @@ typedef struct {
    /** Pointer to memory of type float32_t where the generated longitudes should be stored.*/
    float32_t *lons_output;
 
+   /** The grid specification of the output.*/
    grid *grid_spec;
 } output_spec;
 
