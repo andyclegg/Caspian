@@ -28,6 +28,7 @@ typedef struct memory_mapped_file_s {
    void (*close)(struct memory_mapped_file_s *toclose);
 } memory_mapped_file;
 
+// Function prototypes - implementations in io_helper.c
 memory_mapped_file *open_memory_mapped_input_file(char *filename, unsigned int number_bytes);
 memory_mapped_file *open_memory_mapped_output_file(char *filename, unsigned int number_bytes);
 

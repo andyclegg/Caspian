@@ -17,11 +17,11 @@
  * @param outspec Specification of the output grid.
  * @param reduce_func Selection reduction function.
  * @param attrs Attributes to be used by the reduction function.
- * @param verbose Set as >=1 for verbose output, 0 for silence.
+ * @param verbosity Set as >=1 for verbose output, 0 for silence.
  */
-void perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, int verbose) {
+void perform_gridding(input_spec inspec, output_spec outspec, reduction_function reduce_func, reduction_attrs *attrs, int verbosity) {
 
-   if (verbose) printf("Building output image\n");
+   if (verbosity > 0) printf("Building output image\n");
    time_t start_time = time(NULL);
 
    float32_t x_0 = outspec.grid_spec->central_x - (((float) outspec.grid_spec->width / 2.0) * outspec.grid_spec->horizontal_resolution);
@@ -59,7 +59,7 @@ void perform_gridding(input_spec inspec, output_spec outspec, reduction_function
       }
    }
    time_t end_time = time(NULL);
-   if (verbose) {
+   if (verbosity > 0) {
       printf("Output image built.\n");
       printf("Building image took %d seconds\n", (int) (end_time - start_time));
    }
