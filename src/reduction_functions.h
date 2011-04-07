@@ -54,6 +54,7 @@ typedef struct {
    );
 } reduction_function;
 
+// Function prototypes - implementation in reduction_funtions.c
 reduction_function get_reduction_function_by_name(char *name);
 int reduction_function_is_undef(reduction_function f);
 #endif

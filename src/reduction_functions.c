@@ -7,6 +7,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "median.h"
@@ -21,9 +22,10 @@ void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, dimension_boun
    register NUMERIC_WORKING_TYPE current_sum = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value;
    register unsigned int current_number_of_values = 0;
-
    result_set_item *current_item;
 
+   // Iterate over items in the result set, skipping fill values,
+   // and adding up and counting the non-fill values
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
@@ -34,8 +36,11 @@ void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, dimension_boun
       current_number_of_values++;
    }
 
+   // Calculate the mean using the calculated sum and number of values
+   // If no values were found, output the fill value
    NUMERIC_WORKING_TYPE output_value = (current_number_of_values == 0) ? (attrs->output_fill_value) : (current_sum / (NUMERIC_WORKING_TYPE) current_number_of_values);
 
+   // Store the result
    numeric_put(output_data, output_dtype, output_index, output_value);
 }
 
@@ -49,12 +54,16 @@ void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, dim
    void *best_value = malloc(input_dtype.size);
    register short int value_stored = 0;
 
+   // Calculate the midpoint of the cell
    float32_t central_x = (bounds[X + LOWER] + bounds[X + UPPER]) / 2.0;
    float32_t central_y = (bounds[Y + LOWER] + bounds[Y + UPPER]) / 2.0;
 
    result_set_item *current_item;
 
    register float current_distance;
+
+   // Iterate over all items in the result set, calculating the distance
+   // for each item and storing the value of the nearest item
    while ((current_item = result_set_iterate(set)) != NULL) {
       current_distance = powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2);
       if (current_distance < lowest_distance) {
@@ -65,6 +74,7 @@ void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, dim
       }
    }
 
+   // Store a hardcoded fill value of 0
    if (!value_stored) {
       memset(best_value, 0, input_dtype.size);
    }
@@ -88,6 +98,8 @@ void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, dimension_bo
 
    result_set_item *current_item;
 
+   // Iterate over items in the result set, skipping fill values,
+   // and storing the item with the greatest time value
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
       if(query_data_value == attrs->input_fill_value) {
@@ -113,11 +125,17 @@ void reduce_numeric_median(result_set *set, reduction_attrs *attrs, dimension_bo
    unsigned int current_number_results = 0;
    register NUMERIC_WORKING_TYPE query_data_value;
 
+   // Create an array to store the numeric values of the results
    NUMERIC_WORKING_TYPE *values = calloc(sizeof(NUMERIC_WORKING_TYPE), maximum_number_results);
-   if (values == NULL) { exit(1); }
+   if (values == NULL) {
+      fprintf(stderr, "Couldn't allocate memory to store %d results in reduce_numeric_median\n", maximum_number_results);
+      exit(1);
+   }
 
    result_set_item *current_item;
 
+   // Iterate over result set, skipping fill values, and storing the numeric
+   // value in the array just defined
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
       if(query_data_value == attrs->input_fill_value) {
@@ -126,11 +144,13 @@ void reduce_numeric_median(result_set *set, reduction_attrs *attrs, dimension_bo
       values[current_number_results++] = query_data_value;
    }
 
-   // Now get the median
+   // Compute the median
    NUMERIC_WORKING_TYPE output_value = (current_number_results == 0) ? attrs->output_fill_value : median(values, current_number_results);
+
+   // Store the median
    numeric_put(output_data, output_dtype, output_index, output_value);
 
-   // Free our working array of floats
+   // Free our working array
    free(values);
 }
 
@@ -143,11 +163,16 @@ void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, dimen
    register NUMERIC_WORKING_TYPE current_sum = 0.0, total_distance = 0.0;
    register NUMERIC_WORKING_TYPE query_data_value, current_distance; //Initialized on each loop
 
+   // Compute the midpoint of the query cell
    NUMERIC_WORKING_TYPE central_x = (bounds[X + LOWER] + bounds[X + UPPER]) / 2.0;
    NUMERIC_WORKING_TYPE central_y = (bounds[Y + LOWER] + bounds[Y + UPPER]) / 2.0;
 
    result_set_item *current_item;
 
+   // Iterate over each result, skipping fill values, calculating the
+   // distance for each result, and counting both the total distance
+   // between all results and the centre, and the distance-weighted
+   // value
    while ((current_item = result_set_iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
@@ -159,6 +184,8 @@ void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, dimen
       total_distance += current_distance;
    }
 
+   // Normalise the weighted mean by dividing the weighted sum by the
+   // total sum, and store. Store fill value if no results were found.
    numeric_put(output_data, output_dtype, output_index, (total_distance == 0.0) ? attrs->output_fill_value : current_sum / total_distance);
 }
 

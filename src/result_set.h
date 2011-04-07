@@ -42,6 +42,7 @@ typedef struct result_set_s {
    unsigned int length;
 } result_set;
 
+// Function prototypes - implemented in result_set.c
 result_set *result_set_init();
 void result_set_insert(result_set *set, float x, float y, float t, int record_index);
 void result_set_free(result_set *set);
