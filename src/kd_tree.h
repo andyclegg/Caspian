@@ -20,6 +20,7 @@ typedef struct {
 
    /** Storage for either the discriminator (internal nodes), or the observation index (leaf nodes).*/
    union tree_node_union {
+
       /** The discriminating value on this node's dimension (defined by tag)*/
       float discriminator;
 
@@ -42,8 +43,8 @@ typedef struct {
  * Representation of an adaptive kdtree.
  */
 typedef struct {
-   /** The number of data elements represented by this tree.*/
-   unsigned int num_elements;
+   /** The number of observations represented by this tree.*/
+   unsigned int num_observations;
 
    /** The number of nodes (internal + leaf) in the tree.*/
    unsigned int tree_num_nodes;
@@ -56,13 +57,14 @@ typedef struct {
 
 } kdtree;
 
+// Function prototypes - implementations id kd_tree.c
 index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader);
 index *read_kdtree_index_from_file(FILE *input_file);
 
 /** Node tag for terminal (leaf) nodes */
-#define TERMINAL  3
+#define TERMINAL  254
 
 /** Node tag for unitialised nodes */
-#define UNINITIALISED 4
+#define UNINITIALISED 255
 
 #endif

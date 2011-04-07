@@ -458,7 +458,7 @@ int main(int argc, char **argv) {
 
    if (generating_image) {
       // Calculate file sizes from provided information
-      unsigned int input_data_number_bytes = data_index->num_elements * input_dtype.size;
+      unsigned int input_data_number_bytes = data_index->num_observations * input_dtype.size;
       unsigned int output_data_number_bytes = width * height * output_dtype.size;
       unsigned int output_geo_number_bytes = width * height * sizeof(float32_t);
 

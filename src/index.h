@@ -23,8 +23,8 @@ typedef struct index_s{
     */
    projector *input_projector;
 
-   /** The number of data elements represented by this index.*/
-   unsigned int num_elements;
+   /** The number of data observations represented by this index.*/
+   unsigned int num_observations;
 
    /**
     * Write this index to file, such that it may be reloaded later.

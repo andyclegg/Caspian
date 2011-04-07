@@ -87,7 +87,7 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
 
    // Open the files for reading, check sizes
    struct stat lat_stat, lon_stat, time_stat;
-   size_t no_elements;
+   int num_records;
    FILE *lat_file, *lon_file, *time_file;
 
    if(stat(lat_filename, &lat_stat) != 0) {
@@ -120,7 +120,7 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
       fprintf(stderr, "Critical: Size not divisible by %Zd\n", sizeof(float));
       return NULL;
    }
-   no_elements = (size_t) lat_stat.st_size / sizeof(float);
+   num_records = (int) (lat_stat.st_size / sizeof(float));
 
    lat_file = fopen(lat_filename, "r");
    lon_file = fopen(lon_filename, "r");
@@ -163,7 +163,7 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
    }
 
    new_coordinate_reader->internals = (void *)new_rawfile_reader;
-   new_coordinate_reader->num_records = no_elements;
+   new_coordinate_reader->num_records = num_records;
    new_coordinate_reader->input_projector = input_projector;
    new_coordinate_reader->free = &_rawfile_coordinate_reader_free;
    new_coordinate_reader->read = &_rawfile_coordinate_reader_read;
