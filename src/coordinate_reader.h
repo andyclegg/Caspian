@@ -10,7 +10,13 @@
 #include "projector.h"
 
 /**
- * Representation of a generic coordinate reader.
+ * Generic reader that incrementally reads out sets of coordinates.
+ *
+ * Implementations could include reading coordinates from various file
+ * formats, programatically generating coordinates, or reading coordinates
+ * from a database.
+ *
+ * @see rawfile_coordinate_reader
  */
 typedef struct coordinate_reader_s {
    /** Opaque pointer to the data structure used by the specific implementaiton of coordinate_reader.*/

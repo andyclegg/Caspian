@@ -9,7 +9,7 @@
 
 #include "projector.h"
 
-/** Data structure representing a grid */
+/** A regular geospatial grid in projected coordinate space. */
 typedef struct {
    /** The width in pixels. */
    int width;

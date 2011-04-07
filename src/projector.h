@@ -32,7 +32,7 @@ typedef struct {
 } spherical_coordinates;
 
 /**
- * Interface for projectors.
+ * An object capable of projecting data between spherical and projected coordinates.
  */
 typedef struct projector_s {
    /** Generic pointer to a data structure containing projector-specific information. */

@@ -12,7 +12,7 @@
 #include "index.h"
 
 /**
- * Represents a set of output data. This struct should be constructed manually.
+ * Represents the output requirements of a gridding job. This struct should be constructed manually.
  */
 typedef struct {
    /** Pointer to memory where the gridded data should be stored.*/

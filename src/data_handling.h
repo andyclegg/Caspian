@@ -28,7 +28,7 @@ typedef enum {uint8, uint16, uint32, uint64, int8, int16, int32, int64, float32,
 typedef enum {coded, numeric, undef_style} style;
 
 /**
- * Structure representing a dtype
+ * The type of some data, including encoding and bytes per record.
  */
 typedef struct dtype_s {
    /** The actual format of this particular dtype. */

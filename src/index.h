@@ -12,7 +12,7 @@
 #include "result_set.h"
 
 /**
- * Generic representation of a spatial index.
+ * A spatial index (efficient way to query spatial data for records)
  */
 typedef struct index_s{
    /** Opaque pointer to implementation-specific data structures for this index.*/
