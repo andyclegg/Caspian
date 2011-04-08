@@ -69,7 +69,7 @@ doc/html/index.html: src/*
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
-build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test
+build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test
 
 test/check_data_handling.test: src/data_handling.c src/data_handling.h test/check_data_handling.c
 	gcc test/check_data_handling.c src/data_handling.c -lcheck -o test/check_data_handling.test
@@ -80,10 +80,14 @@ test/check_rawfile_coordinate_reader.test: src/rawfile_coordinate_reader.c src/r
 test/check_grid.test: src/grid.c src/grid.h build/proj_projector.o test/check_grid.c
 	gcc test/check_grid.c src/grid.c build/proj_projector.o -lcheck -lproj -o test/check_grid.test
 
+test/check_io_helper.test: src/io_helper.c build/io_helper.o test/check_io_helper.c
+	gcc test/check_io_helper.c build/io_helper.o -lcheck -o test/check_io_helper.test
+
 run_testcases: build_testcases
 	./test/check_data_handling.test
 	./test/check_rawfile_coordinate_reader.test
 	./test/check_grid.test
+	./test/check_io_helper.test
 
 .PHONY: clean
 clean:
