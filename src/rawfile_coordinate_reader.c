@@ -92,35 +92,35 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
 
    // Stat all the files to get their sizes (and check their existence!)
    if(stat(lat_filename, &lat_stat) != 0) {
-      fprintf(stderr, "Critical: Could not stat the latitude file %s (%s)\n", lat_filename, strerror(errno));
+      fprintf(stderr, "Could not stat the latitude file %s (%s)\n", lat_filename, strerror(errno));
       return NULL;
    }
    if(stat(lon_filename, &lon_stat) != 0) {
-      fprintf(stderr, "critical: could not stat the longitude file %s (%s)\n", lon_filename, strerror(errno));
+      fprintf(stderr, "Could not stat the longitude file %s (%s)\n", lon_filename, strerror(errno));
       return NULL;
    }
    if (time_filename != NULL) {
       if(stat(time_filename, &time_stat) != 0) {
-         fprintf(stderr, "critical: could not stat the time file %s (%s)\n", time_filename, strerror(errno));
+         fprintf(stderr, "Could not stat the time file %s (%s)\n", time_filename, strerror(errno));
          return NULL;
       }
    }
 
    //Check file sizes are all equal
    if (!(lat_stat.st_size == lon_stat.st_size)) {
-      fprintf(stderr, "Critical: Lat size != Lon size\n");
+      fprintf(stderr, "The sizes of the latitude and longitude files are not equal\n");
       return NULL;
    }
    if (time_filename != NULL) {
       if (!(lat_stat.st_size == time_stat.st_size)) {
-         fprintf(stderr, "Critical: Lat size != Time size\n");
+         fprintf(stderr, "The sizes of the latitude/longitude files and the time file are not equal\n");
          return NULL;
       }
    }
 
    // Check file size is a multiple of the size of a float
    if ((lat_stat.st_size % sizeof(float)) != 0) {
-      fprintf(stderr, "Critical: Size not divisible by %Zd\n", sizeof(float));
+      fprintf(stderr, "The size of the latitude/longitude/time files is not divisible by %Zd\n", sizeof(float));
       return NULL;
    }
 
@@ -130,26 +130,26 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
    // Open the latitudes file
    lat_file = fopen(lat_filename, "r");
    if (lat_file == NULL) {
-      fprintf(stderr, "Critical: Couldn't open lat file\n");
+      fprintf(stderr, "Couldn't open latitude file %s (%s)\n", lat_filename, strerror(errno));
       return NULL;
    }
 
    // Open the longitudes file
    lon_file = fopen(lon_filename, "r");
    if (lon_file == NULL) {
-      fprintf(stderr, "Critical: Couldn't open lon file\n");
+      fprintf(stderr, "Couldn't open longitude file %s (%s)\n", lon_filename, strerror(errno));
       return NULL;
    }
 
    // Open the time file
    if (time_filename == NULL) {
       // Fall back to zeros if there is no time file
-      time_file = fopen("/dev/zero", "r");
-   } else {
-      time_file = fopen(time_filename, "r");
+      time_filename = "/dev/zero";
    }
+
+   time_file = fopen(time_filename, "r");
    if (time_file == NULL) {
-      fprintf(stderr, "Critical: Couldn't open time file\n");
+      fprintf(stderr, "Couldn't open time file %s (%s)\n", time_filename, strerror(errno));
       return NULL;
    }
 
