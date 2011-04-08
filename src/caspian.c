@@ -25,6 +25,7 @@
  *
  * Implements command-line functionality for Caspian.
  */
+#include <errno.h>
 #include <getopt.h>
 #include <libgen.h>
 #include <math.h>
@@ -415,6 +416,10 @@ int main(int argc, char **argv) {
    if (loading_index) {
       // Read from disk
       FILE *input_index_file = fopen(input_index_filename, "r");
+      if (input_index_file == NULL) {
+         fprintf(stderr, "Could not open index file %s (%s)\n", input_index_filename, strerror(errno));
+         return -1;
+      }
       data_index = read_kdtree_index_from_file(input_index_file);
       fclose(input_index_file);
    } else {
@@ -423,14 +428,14 @@ int main(int argc, char **argv) {
       // Initialize the projection
       projector *input_projection = get_proj_projector_from_string(projection_string);
       if (input_projection == NULL) {
-         fprintf(stderr, "Critical: Could not initialize projector\n");
+         fprintf(stderr, "Could not initialize projector\n");
          return -1;
       }
 
       // Build a coordinate reader
       coordinate_reader *reader = get_coordinate_reader_from_files(input_lat_filename, input_lon_filename, input_time_filename, input_projection);
       if (reader == NULL) {
-         fprintf(stderr, "Critical: Could not initialize coordinate reader\n");
+         fprintf(stderr, "Could not initialize coordinate reader\n");
          return -1;
       }
 
