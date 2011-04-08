@@ -123,6 +123,12 @@ projector *get_proj_projector_from_file(FILE *input_file) {
    unsigned int projection_string_length;
    fread(&projection_string_length, sizeof(unsigned int), 1, input_file);
 
+   // Check projection string length
+   if (projection_string_length == 0) {
+      fprintf(stderr, "Read a projection string length of 0\n");
+      exit(-1);
+   }
+
    // Read the projection string
    char *projection_string = calloc(projection_string_length, sizeof(char));
    if (projection_string == NULL) {
