@@ -423,12 +423,16 @@ int main(int argc, char **argv) {
       // Initialize the projection
       projector *input_projection = get_proj_projector_from_string(projection_string);
       if (input_projection == NULL) {
-         fprintf(stderr, "Critical: Couldn't initialize projector\n");
+         fprintf(stderr, "Critical: Could not initialize projector\n");
          return -1;
       }
 
       // Build a coordinate reader
       coordinate_reader *reader = get_coordinate_reader_from_files(input_lat_filename, input_lon_filename, input_time_filename, input_projection);
+      if (reader == NULL) {
+         fprintf(stderr, "Critical: Could not initialize coordinate reader\n");
+         return -1;
+      }
 
       // Build the index (kdtree is currently hardcoded)
       if (verbosity > 0) printf("Building indices\n");

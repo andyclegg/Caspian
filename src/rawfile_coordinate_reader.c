@@ -81,7 +81,7 @@ int _rawfile_coordinate_reader_read(coordinate_reader *source, float *x, float *
  * @param lon_filename The path to the file containing longitudes (may be NULL).
  * @param time_filename The path to the file containing times (may be NULL).
  * @param input_projector A projector to project the horizontal coordinates from the files into latitude/longitude space.
- * @return A pointer to an initialised coordinate_reader.
+ * @return A pointer to an initialised coordinate_reader, or NULL on failure.
  */
 coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lon_filename, char *time_filename, projector *input_projector) {
 
@@ -92,16 +92,16 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
 
    // Stat all the files to get their sizes (and check their existence!)
    if(stat(lat_filename, &lat_stat) != 0) {
-      printf("Critical: Could not stat the latitude file %s (%s)\n", lat_filename, strerror(errno));
+      fprintf(stderr, "Critical: Could not stat the latitude file %s (%s)\n", lat_filename, strerror(errno));
       return NULL;
    }
    if(stat(lon_filename, &lon_stat) != 0) {
-      printf("critical: could not stat the longitude file %s (%s)\n", lon_filename, strerror(errno));
+      fprintf(stderr, "critical: could not stat the longitude file %s (%s)\n", lon_filename, strerror(errno));
       return NULL;
    }
    if (time_filename != NULL) {
       if(stat(time_filename, &time_stat) != 0) {
-         printf("critical: could not stat the time file %s (%s)\n", time_filename, strerror(errno));
+         fprintf(stderr, "critical: could not stat the time file %s (%s)\n", time_filename, strerror(errno));
          return NULL;
       }
    }

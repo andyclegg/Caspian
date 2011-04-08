@@ -39,7 +39,6 @@ typedef struct {
     * The horizontal offset from a given point defining the sampling box.
     *
     * For a horizontal position x, the horizontal sampling range is {x - horizontal_sampling_offset, x + horizontal_sampling_offset}
-    * @todo Better defined elsewhere?
     */
    float horizontal_sampling_offset;
 
@@ -47,7 +46,6 @@ typedef struct {
     * The vertical offset from a given point defining the sampling box.
     *
     * For a vertical position y, the vertical sampling range is {y - vertical_sampling_offset, y + vertical_sampling_offset}
-    * @todo Better defined elsewhere?
     */
    float vertical_sampling_offset;
 
