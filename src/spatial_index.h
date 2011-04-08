@@ -14,7 +14,7 @@
 /**
  * A spatial index (efficient way to query spatial data for records)
  */
-typedef struct index_s{
+typedef struct spatial_index_s{
    /** Opaque pointer to implementation-specific data structures for this index.*/
    void *data_structure;
 
@@ -32,14 +32,14 @@ typedef struct index_s{
     * @param towrite The index to write out to file.
     * @param output_file The file to write the index to.
     */
-   void (*write_to_file)(struct index_s *towrite, FILE *output_file);
+   void (*write_to_file)(struct spatial_index_s *towrite, FILE *output_file);
 
    /**
     * Free this index.
     *
     * @param tofree The index to free.
     */
-   void (*free)(struct index_s *tofree);
+   void (*free)(struct spatial_index_s *tofree);
 
    /**
     * Query this index for a set of observations.
@@ -47,7 +47,7 @@ typedef struct index_s{
     * @param toquery The index to query.
     * @param dimension_bounds The bounds of the query - an array of floats (lower X, upper X, lower Y, upper Y, lower T, upper T).
     */
-   result_set *(*query)(struct index_s *toquery, float *dimension_bounds);
-} index;
+   result_set *(*query)(struct spatial_index_s *toquery, float *dimension_bounds);
+} spatial_index;
 
 #endif

@@ -44,6 +44,7 @@
 #include "projector.h"
 #include "rawfile_coordinate_reader.h"
 #include "reduction_functions.h"
+#include "spatial_index.h"
 
 /**
  * Polar circumference of the earth according to WGS84 - used for calculating default values
@@ -411,7 +412,7 @@ int main(int argc, char **argv) {
     * Index (load or generate)              *
     ****************************************/
 
-   index *data_index = NULL;
+   spatial_index *data_index = NULL;
 
    if (loading_index) {
       // Read from disk

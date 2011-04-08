@@ -7,7 +7,7 @@
 #ifndef  HEADER_KD_TREE_MINIMAL
 #define HEADER_KD_TREE_MINIMAL
 #include "coordinate_reader.h"
-#include "index.h"
+#include "spatial_index.h"
 #include "projector.h"
 #include "result_set.h"
 
@@ -58,8 +58,8 @@ typedef struct {
 } kdtree;
 
 // Function prototypes - implementations id kd_tree.c
-index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader);
-index *read_kdtree_index_from_file(FILE *input_file);
+spatial_index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader);
+spatial_index *read_kdtree_index_from_file(FILE *input_file);
 
 /** Node tag for terminal (leaf) nodes */
 #define TERMINAL  254

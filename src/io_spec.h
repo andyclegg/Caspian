@@ -9,7 +9,7 @@
 
 #include "data_handling.h"
 #include "grid.h"
-#include "index.h"
+#include "spatial_index.h"
 
 /**
  * Represents the output requirements of a gridding job. This struct should be constructed manually.
@@ -41,8 +41,8 @@ typedef struct {
    /** The type of the data */
    dtype input_dtype;
 
-   /** The geospatial index for the input.*/
-   index *coordinate_index;
+   /** The spatial index for the input.*/
+   spatial_index *coordinate_index;
 } input_spec;
 
 #endif

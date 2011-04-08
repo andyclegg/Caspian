@@ -12,7 +12,7 @@
 
 #include "coordinate_reader.h"
 #include "data_handling.h"
-#include "index.h"
+#include "spatial_index.h"
 #include "kd_tree.h"
 #include "projector.h"
 #include "proj_projector.h"
@@ -211,7 +211,7 @@ static void query_kdtree_at(kdtree *tree_p, dimension_bounds bounds, result_set 
  * @see index::query
  */
 
-result_set *query_kdtree(index *toquery, dimension_bounds bounds) {
+result_set *query_kdtree(spatial_index *toquery, dimension_bounds bounds) {
    result_set *results = result_set_init();
    query_kdtree_at((kdtree *)(toquery->data_structure), bounds, results, 0);
    return results;
@@ -507,7 +507,7 @@ void fill_tree_from_reader(kdtree *tree_p, coordinate_reader *reader) {
  * @param towrite The index to write (must be a kdtree based index).
  * @param output_file The file to write the binary representation of the index to.
  */
-void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
+void write_kdtree_index_to_file(spatial_index *towrite, FILE *output_file) {
    kdtree *tree_p = (kdtree *) towrite->data_structure;
 
    // Write the header to file
@@ -534,7 +534,7 @@ void write_kdtree_index_to_file(index *towrite, FILE *output_file) {
  *
  * @param tofree The kdtree-based index to free.
  */
-void free_kdtree_index(index *tofree) {
+void free_kdtree_index(spatial_index *tofree) {
    kdtree *tree_p = (kdtree *) tofree->data_structure;
    free_tree(tree_p);
    free(tofree);
@@ -546,7 +546,7 @@ void free_kdtree_index(index *tofree) {
  * @param input_file The file from which to read the index.
  * @return A pointer to a constructed and initialised kdtree-based index.
  */
-index *read_kdtree_index_from_file(FILE *input_file) {
+spatial_index *read_kdtree_index_from_file(FILE *input_file) {
    // Read and check the header
    unsigned int file_format_number;
    fread(&file_format_number, sizeof(unsigned int), 1, input_file);
@@ -596,7 +596,7 @@ index *read_kdtree_index_from_file(FILE *input_file) {
    #endif
 
    // Turn this into an index
-   index *output_index = malloc(sizeof(index));
+   spatial_index *output_index = malloc(sizeof(spatial_index));
    if (output_index == NULL) {
       fprintf(stderr, "Failed to allocate space for index\n");
       return NULL;
@@ -618,7 +618,7 @@ index *read_kdtree_index_from_file(FILE *input_file) {
  * @param reader A coordinate_reader instance (source of gelocation information)
  * @return Pointer to an index structure.
  */
-index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader) {
+spatial_index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader) {
    kdtree *root_p = construct_tree(reader->num_records);
 
    fill_tree_from_reader(root_p, reader);
@@ -630,7 +630,7 @@ index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *reader) {
    #endif
 
    // Compile this into an index
-   index *output_index = malloc(sizeof(index));
+   spatial_index *output_index = malloc(sizeof(spatial_index));
    if (output_index == NULL) {
       fprintf(stderr, "Failed to allocate space for index\n");
       exit(-1);
