@@ -9,6 +9,7 @@
 
 #include "gridding.h"
 #include "io_spec.h"
+#include "result_set.h"
 
 /**
  * Perform gridding based on input and output specifications, using the specified reduction function and data source.
@@ -47,7 +48,7 @@ void perform_gridding(input_spec inspec, output_spec outspec, reduction_function
 
             result_set *current_result_set = inspec.coordinate_index->query(inspec.coordinate_index, query_dimensions);
             reduce_func.call(current_result_set, attrs, query_dimensions, inspec.data_input, outspec.data_output, index, inspec.input_dtype, outspec.output_dtype);
-            result_set_free(current_result_set);
+            current_result_set->free(current_result_set);
          }
 
          if (outspec.lats_output != NULL || outspec.lons_output != NULL) {

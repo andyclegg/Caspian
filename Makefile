@@ -38,13 +38,13 @@ build/kd_tree.o: src/kd_tree.c src/kd_tree.h src/coordinate_reader.h src/data_ha
 build/data_handling.o: src/data_handling.c src/data_handling.h
 	$(OPT_CC) src/data_handling.c -o build/data_handling.o
 
-build/reduction_functions.o: src/reduction_functions.c src/reduction_functions.h src/median.h
+build/reduction_functions.o: src/reduction_functions.c src/reduction_functions.h src/median.h src/result_set.h
 	$(OPT_CC) src/reduction_functions.c -o build/reduction_functions.o
 
 build/grid.o: src/grid.c src/grid.h src/projector.h
 	$(OPT_CC) src/grid.c -o build/grid.o
 
-build/gridding.o: src/gridding.c src/gridding.h src/io_spec.h src/reduction_functions.h
+build/gridding.o: src/gridding.c src/gridding.h src/io_spec.h src/reduction_functions.h src/result_set.h
 	$(OPT_CC) src/gridding.c -o build/gridding.o
 
 build/proj_projector.o: src/proj_projector.c src/proj_projector.h src/projector.h

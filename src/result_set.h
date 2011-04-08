@@ -40,12 +40,35 @@ typedef struct result_set_s {
 
    /** The length of the result set.*/
    unsigned int length;
+
+   /**
+    * Insert a single item into a result set.
+    *
+    * @param set The initialised result_set to insert the item into.
+    * @param x The x-value of the new item.
+    * @param y The y-value of the new item.
+    * @param t The time value of the new item.
+    * @param record_index The index of the new item.
+    */
+   void (* insert)(struct result_set_s *set, float x, float y, float t, int record_index);
+
+   /**
+    * Free a result_set.
+    *
+    * @param tofree The result_set to free.
+    */
+   void (* free)(struct result_set_s *tofree);
+
+   /**
+    * Return the next result_set_item from a result_set.
+    *
+    * @param set The result_set to retrieve the next item from.
+    * @return A pointer to the next result_set_item.
+    */
+   result_set_item *(* iterate)(struct result_set_s *set);
+
 } result_set;
 
 // Function prototypes - implemented in result_set.c
 result_set *result_set_init();
-void result_set_insert(result_set *set, float x, float y, float t, int record_index);
-void result_set_free(result_set *set);
-result_set_item *result_set_iterate(result_set *set);
-unsigned int result_set_len(result_set *set);
 #endif

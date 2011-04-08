@@ -11,25 +11,6 @@
 #include "result_set.h"
 
 /**
- * Initialise an empty result set.
- *
- * @return A pointer to an initialised result set.
- */
-result_set *result_set_init() {
-   result_set *set = malloc(sizeof(result_set));
-   if (set == NULL) {
-      fprintf(stderr, "Could not allocate space for a result_set struct\n");
-      exit(-1);
-   }
-   set->head = NULL;
-   set->current = NULL;
-   set->tail = NULL;
-   set->length = 0;
-   pthread_mutex_init(&set->write_lock, NULL);
-   return set;
-}
-
-/**
  * Insert a single item into a result set.
  *
  * @param set The initialised result_set to insert the item into.
@@ -105,11 +86,25 @@ void result_set_free(result_set *set) {
 }
 
 /**
- * Get the number of items in a result set.
+ * Initialise an empty result set.
  *
- * @param set The result_set to get the number of items from.
- * @return The number of items in the result set.
+ * @return A pointer to an initialised result set.
  */
-unsigned int result_set_len(result_set *set) {
-   return set->length;
+result_set *result_set_init() {
+   result_set *set = malloc(sizeof(result_set));
+   if (set == NULL) {
+      fprintf(stderr, "Could not allocate space for a result_set struct\n");
+      exit(-1);
+   }
+   set->head = NULL;
+   set->current = NULL;
+   set->tail = NULL;
+   set->length = 0;
+   pthread_mutex_init(&set->write_lock, NULL);
+
+   // Set up function pointers
+   set->insert = &result_set_insert;
+   set->free = &result_set_free;
+   set->iterate = &result_set_iterate;
+   return set;
 }
