@@ -186,7 +186,7 @@ static void query_kdtree_at(kdtree *tree_p, dimension_bounds bounds, result_set 
          (current_observation->dimensions[T] <= bounds[2*T + UPPER])) {
 
          // Result falls within bounds: store in the result set
-         result_set_insert(results, current_observation->dimensions[X], current_observation->dimensions[Y], current_observation->dimensions[T], current_observation->file_record_index);
+         results->insert(results, current_observation->dimensions[X], current_observation->dimensions[Y], current_observation->dimensions[T], current_observation->file_record_index);
       }
    } else {
       // 3 cases - the discriminator can either be less than our search range, within it, or above it

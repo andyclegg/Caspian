@@ -12,6 +12,7 @@
 
 #include "median.h"
 #include "reduction_functions.h"
+#include "result_set.h"
 
 /**
  * Reduce numeric data by taking the mean.
@@ -26,7 +27,7 @@ void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, dimension_boun
 
    // Iterate over items in the result set, skipping fill values,
    // and adding up and counting the non-fill values
-   while ((current_item = result_set_iterate(set)) != NULL) {
+   while ((current_item = set->iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
       if(query_data_value == attrs->input_fill_value) {
@@ -68,7 +69,7 @@ void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, dim
 
    // Iterate over all items in the result set, calculating the distance
    // for each item and storing the value of the nearest item
-   while ((current_item = result_set_iterate(set)) != NULL) {
+   while ((current_item = set->iterate(set)) != NULL) {
       current_distance = powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2);
       if (current_distance < lowest_distance) {
          // We have a new nearest neighbour, replace in the value
@@ -104,7 +105,7 @@ void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, dimension_bo
 
    // Iterate over items in the result set, skipping fill values,
    // and storing the item with the greatest time value
-   while ((current_item = result_set_iterate(set)) != NULL) {
+   while ((current_item = set->iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
       if(query_data_value == attrs->input_fill_value) {
          continue;
@@ -125,7 +126,7 @@ void reduce_numeric_newest(result_set *set, reduction_attrs *attrs, dimension_bo
  * @see reduction_function::call
  */
 void reduce_numeric_median(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
-   unsigned int maximum_number_results = result_set_len(set); // maximum because some will be fill values
+   unsigned int maximum_number_results = set->length; // maximum because some will be fill values
    unsigned int current_number_results = 0;
    register NUMERIC_WORKING_TYPE query_data_value;
 
@@ -140,7 +141,7 @@ void reduce_numeric_median(result_set *set, reduction_attrs *attrs, dimension_bo
 
    // Iterate over result set, skipping fill values, and storing the numeric
    // value in the array just defined
-   while ((current_item = result_set_iterate(set)) != NULL) {
+   while ((current_item = set->iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
       if(query_data_value == attrs->input_fill_value) {
          continue;
@@ -177,7 +178,7 @@ void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, dimen
    // distance for each result, and counting both the total distance
    // between all results and the centre, and the distance-weighted
    // value
-   while ((current_item = result_set_iterate(set)) != NULL) {
+   while ((current_item = set->iterate(set)) != NULL) {
       query_data_value = numeric_get(input_data, input_dtype, current_item->record_index);
 
       if(query_data_value == attrs->input_fill_value) {
