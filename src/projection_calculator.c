@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
    // Initialize the projection
    projPJ *projection = pj_init_plus(projection_string);
    if (projection == NULL) {
-      printf("Critical: Couldn't initialize projection\n"); //TODO: Stderr
+      fprintf(stderr, "Couldn't initialize projection\n");
       return -1;
    }
 

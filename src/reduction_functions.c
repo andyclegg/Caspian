@@ -52,6 +52,10 @@ void reduce_numeric_mean(result_set *set, reduction_attrs *attrs, dimension_boun
 void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
    register float lowest_distance = FLT_MAX;
    void *best_value = malloc(input_dtype.size);
+   if (best_value == NULL) {
+      fprintf(stderr, "Couldn't allocate space to store a single %s value\n", input_dtype.string);
+      exit(-1);
+   }
    register short int value_stored = 0;
 
    // Calculate the midpoint of the cell
@@ -129,7 +133,7 @@ void reduce_numeric_median(result_set *set, reduction_attrs *attrs, dimension_bo
    NUMERIC_WORKING_TYPE *values = calloc(sizeof(NUMERIC_WORKING_TYPE), maximum_number_results);
    if (values == NULL) {
       fprintf(stderr, "Couldn't allocate memory to store %d results in reduce_numeric_median\n", maximum_number_results);
-      exit(1);
+      exit(-1);
    }
 
    result_set_item *current_item;
