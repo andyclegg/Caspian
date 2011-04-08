@@ -26,7 +26,7 @@ build/median.o: src/median.c src/median.h
 build/caspian.o: src/caspian.c src/coordinate_reader.h src/data_handling.h src/gridding.h src/grid.h src/io_helper.h src/kd_tree.h src/proj_projector.h src/projector.h src/rawfile_coordinate_reader.h src/reduction_functions.h src/spatial_index.h
 	$(OPT_CC) src/caspian.c -o build/caspian.o
 
-build/result_set.o: src/result_set.c src/result_set.o
+build/result_set.o: src/result_set.c src/result_set.h
 	$(OPT_CC) src/result_set.c -o build/result_set.o
 
 build/rawfile_coordinate_reader.o: src/rawfile_coordinate_reader.c src/rawfile_coordinate_reader.h src/coordinate_reader.h
@@ -35,7 +35,7 @@ build/rawfile_coordinate_reader.o: src/rawfile_coordinate_reader.c src/rawfile_c
 build/kd_tree.o: src/kd_tree.c src/kd_tree.h src/coordinate_reader.h src/data_handling.h src/spatial_index.h src/proj_projector.h src/projector.h src/result_set.h
 	$(OPT_CC) src/kd_tree.c -o build/kd_tree.o
 
-build/data_handling.o: src/data_handling.c src/data_handling.o
+build/data_handling.o: src/data_handling.c src/data_handling.h
 	$(OPT_CC) src/data_handling.c -o build/data_handling.o
 
 build/reduction_functions.o: src/reduction_functions.c src/reduction_functions.h src/median.h
@@ -69,13 +69,17 @@ doc/html/index.html: src/*
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
-build_testcases: test/check_data_handling
+build_testcases: caspian test/check_data_handling test/check_rawfile_coordinate_reader
 
 test/check_data_handling: src/data_handling.c src/data_handling.h test/check_data_handling.c
 	gcc test/check_data_handling.c src/data_handling.c -lcheck -o test/check_data_handling
 
+test/check_rawfile_coordinate_reader: src/rawfile_coordinate_reader.c src/rawfile_coordinate_reader.h src/coordinate_reader.h src/projector.h test/check_rawfile_coordinate_reader.c
+	gcc test/check_rawfile_coordinate_reader.c src/rawfile_coordinate_reader.c build/proj_projector.o -lcheck -lproj -o test/check_rawfile_coordinate_reader
+
 run_testcases: build_testcases
 	./test/check_data_handling
+	./test/check_rawfile_coordinate_reader
 
 .PHONY: clean
 clean:
