@@ -45,6 +45,10 @@ kdtree *construct_tree(unsigned int num_observations) {
 
    // Allocate the kdtree struct
    kdtree *output_tree = malloc(sizeof(kdtree));
+   if (output_tree == NULL) {
+      fprintf(stderr, "Could not allocate space for a kdtree struct.\n");
+      exit(-1);
+   }
    total_allocation += sizeof(kdtree);
 
    // Compute the number of nodes needed - the number of leaf nodes
@@ -65,15 +69,25 @@ kdtree *construct_tree(unsigned int num_observations) {
    output_tree->tree_num_nodes = tree_number_of_nodes;
 
    // Allocate space for the nodes, and mark them as uninitialised
-   output_tree->tree_nodes = calloc(sizeof(kdtree_node), tree_number_of_nodes);
-   total_allocation += sizeof(kdtree_node) * tree_number_of_nodes;
+   size_t kdtree_node_allocate_size = sizeof(kdtree_node) * tree_number_of_nodes;
+   output_tree->tree_nodes = malloc(kdtree_node_allocate_size);
+   if (output_tree->tree_nodes == NULL) {
+      fprintf(stderr, "Could not allocate %Zd bytes to store the kdtree nodes\n", kdtree_node_allocate_size);
+      exit(-1);
+   }
+   total_allocation += kdtree_node_allocate_size;
    for (unsigned int i=0; i<tree_number_of_nodes; i++) {
       output_tree->tree_nodes[i].tag = UNINITIALISED;
    }
 
    // Allocate space for the observations
-   output_tree->observations = calloc(sizeof(observation), num_observations);
-   total_allocation += sizeof(observation) * num_observations;
+   size_t observation_allocate_size = sizeof(observation) * num_observations;
+   output_tree->observations = malloc(observation_allocate_size);
+   if (output_tree->observations == NULL) {
+      fprintf(stderr, "Could not allocate %Zd bytes to store the kdtree observations\n", observation_allocate_size);
+      exit(-1);
+   }
+   total_allocation += observation_allocate_size;
 
    #ifdef DEBUG_KDTREE
    printf("construct_tree: Total allocation is %ld bytes\n", (long int) total_allocation);
@@ -238,7 +252,6 @@ observation *nearest_neighbour_recursive(kdtree *tree_p, float *target_point, un
             return potential_best;
          }
       }
-
       return best;
    }
 }
@@ -479,7 +492,7 @@ void fill_tree_from_reader(kdtree *tree_p, coordinate_reader *reader) {
       // Read the values from the coordinate reader into the observation
       result = reader->read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y], &observations[current_index].dimensions[T]);
       if (!result) {
-         printf("Critical: Failed to read all observations from files\n");
+         printf("Failed to read all observations from files\n");
          exit(-1);
       }
    }

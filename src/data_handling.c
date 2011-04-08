@@ -99,7 +99,7 @@ void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE
          put(float64_t);
          break;
       default:
-         fprintf(stderr, "numeric_put received an invalid dtype (%s), quitting.\n", output_dtype.string);
+         fprintf(stderr, "Unknown dtype '%s' (this is probably a bug in Caspian).\n", output_dtype.string);
          exit(-1);
    }
 }
@@ -171,7 +171,7 @@ dtype dtype_string_parse(char *dtype_string) {
    if (parsed) {
       return output;
    } else {
-      fprintf(stderr, "Could not decode dtype '%s'.\n", dtype_string);
+      fprintf(stderr, "Could not parse dtype '%s'.\n", dtype_string);
       exit(-1);
    }
 }
