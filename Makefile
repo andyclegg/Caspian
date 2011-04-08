@@ -15,6 +15,7 @@ projcalc: bin/projcalc
 debug: bin/caspian-debug
 docs: doc/caspian.pdf doc/html/index.html
 quickview: bin/quickview
+check: build_testcases run_testcases
 
 bin/projcalc: src/projection_calculator.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $? -o bin/projcalc
@@ -67,6 +68,14 @@ doc/html/index.html: src/*
 
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
+
+build_testcases: test/check_data_handling
+
+test/check_data_handling: src/data_handling.c src/data_handling.h test/check_data_handling.c
+	gcc test/check_data_handling.c src/data_handling.c -lcheck -o test/check_data_handling
+
+run_testcases: build_testcases
+	./test/check_data_handling
 
 .PHONY: clean
 clean:
