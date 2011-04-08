@@ -6,7 +6,7 @@ CFLAGS=-fopenmp -std=c99 -Wall -Werror
 OPT_FLAGS=-O3 -mtune=native
 DEBUG_FLAGS=-DDEBUG -ggdb
 OPT_CC=$(CC) $(CFLAGS) $(OPT_FLAGS) -c
-CHECK_CC=$(CC) -lcheck -std=c99
+CHECK_CC=$(CC) -lcheck -std=c99 -fopenmp -lm
 
 minimal: caspian quickview
 all: caspian projcalc debug docs quickview
@@ -70,7 +70,7 @@ doc/html/index.html: src/*
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
-build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test test/check_median.test test/check_result_set.test test/check_proj_projector.test
+build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test test/check_median.test test/check_result_set.test test/check_proj_projector.test test/check_kd_tree.test
 
 test/check_data_handling.test: build/data_handling.o test/check_data_handling.c
 	$(CHECK_CC) test/check_data_handling.c build/data_handling.o -o test/check_data_handling.test
@@ -93,6 +93,10 @@ test/check_result_set.test: build/result_set.o test/check_result_set.c
 test/check_proj_projector.test: build/proj_projector.o test/check_proj_projector.c
 	$(CHECK_CC) test/check_proj_projector.c build/proj_projector.o -lproj -o test/check_proj_projector.test
 
+test/check_kd_tree.test: build/kd_tree.o build/proj_projector.o build/rawfile_coordinate_reader.o build/result_set.o test/check_kd_tree.c
+	$(CHECK_CC) build/kd_tree.o build/proj_projector.o build/rawfile_coordinate_reader.o build/result_set.o test/check_kd_tree.c -lproj -o test/check_kd_tree.test
+
+
 run_testcases: build_testcases
 	./test/check_data_handling.test
 	./test/check_rawfile_coordinate_reader.test
@@ -101,6 +105,7 @@ run_testcases: build_testcases
 	./test/check_median.test
 	./test/check_result_set.test
 	./test/check_proj_projector.test
+	./test/check_kd_tree.test
 
 .PHONY: clean
 clean:
