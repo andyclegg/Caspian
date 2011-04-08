@@ -8,6 +8,8 @@
 #ifndef HEADER_INDEX
 #define HEADER_INDEX
 #include <stdio.h>
+
+#include "data_handling.h"
 #include "projector.h"
 #include "result_set.h"
 
@@ -45,9 +47,9 @@ typedef struct spatial_index_s{
     * Query this index for a set of observations.
     *
     * @param toquery The index to query.
-    * @param dimension_bounds The bounds of the query - an array of floats (lower X, upper X, lower Y, upper Y, lower T, upper T).
+    * @param bounds The bounds of the query - an array of floats (lower X, upper X, lower Y, upper Y, lower T, upper T).
     */
-   result_set *(*query)(struct spatial_index_s *toquery, float *dimension_bounds);
+   result_set *(*query)(struct spatial_index_s *toquery, dimension_bounds bounds);
 } spatial_index;
 
 #endif
