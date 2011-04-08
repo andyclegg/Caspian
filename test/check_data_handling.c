@@ -77,7 +77,8 @@ Suite *dtype_suite(void) {
 int main(void) {
    Suite *s = dtype_suite();
    SRunner *suite_runner = srunner_create(s);
-   srunner_run_all(suite_runner, CK_VERBOSE);
+   srunner_run_all(suite_runner, CK_NORMAL);
+   int failures = srunner_ntests_failed(suite_runner);
    srunner_free(suite_runner);
-   return 0;
+   return (failures == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
