@@ -9,6 +9,10 @@
 
 #include "grid.h"
 
+void free_grid(grid *tofree) {
+   free(tofree);
+}
+
 /**
  * Initialise a grid with the given parameters
  *
@@ -29,7 +33,8 @@
 grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projector *input_projector) {
    grid *result = malloc(sizeof(grid));
    if (result == NULL) {
-      return NULL;
+      fprintf(stderr, "Failed to allocate space for a grid struct.\n");
+      exit(-1);
    }
 
    // Store the values
@@ -59,6 +64,8 @@ grid *initialise_grid(int width, int height, float vertical_resolution, float ho
 
    result->input_projector = input_projector;
 
+   result->free = &free_grid;
+
    return result;
 }
 
@@ -74,11 +81,3 @@ void set_time_constraints(grid *output_grid, float start, float end) {
    output_grid->time_max = end;
 }
 
-/**
- * Free the given grid.
- *
- * @param tofree The grid to free.
- */
-void free_grid(grid *tofree) {
-   free(tofree);
-}
