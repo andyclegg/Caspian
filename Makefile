@@ -71,16 +71,16 @@ bin/quickview: src/quickview
 
 build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test test/check_median.test
 
-test/check_data_handling.test: src/data_handling.c src/data_handling.h test/check_data_handling.c
-	gcc test/check_data_handling.c src/data_handling.c -lcheck -o test/check_data_handling.test
+test/check_data_handling.test: build/data_handling.o test/check_data_handling.c
+	gcc test/check_data_handling.c build/data_handling.o -lcheck -o test/check_data_handling.test
 
-test/check_rawfile_coordinate_reader.test: src/rawfile_coordinate_reader.c src/rawfile_coordinate_reader.h src/coordinate_reader.h build/proj_projector.o test/check_rawfile_coordinate_reader.c
-	gcc test/check_rawfile_coordinate_reader.c src/rawfile_coordinate_reader.c build/proj_projector.o -lcheck -lproj -o test/check_rawfile_coordinate_reader.test
+test/check_rawfile_coordinate_reader.test: build/rawfile_coordinate_reader.o build/proj_projector.o test/check_rawfile_coordinate_reader.c
+	gcc test/check_rawfile_coordinate_reader.c build/rawfile_coordinate_reader.o build/proj_projector.o -lcheck -lproj -o test/check_rawfile_coordinate_reader.test
 
-test/check_grid.test: src/grid.c src/grid.h build/proj_projector.o test/check_grid.c
-	gcc test/check_grid.c src/grid.c build/proj_projector.o -lcheck -lproj -o test/check_grid.test
+test/check_grid.test: build/grid.o build/proj_projector.o test/check_grid.c
+	gcc test/check_grid.c build/grid.o build/proj_projector.o -lcheck -lproj -o test/check_grid.test
 
-test/check_io_helper.test: src/io_helper.c build/io_helper.o test/check_io_helper.c
+test/check_io_helper.test: build/io_helper.o test/check_io_helper.c
 	gcc test/check_io_helper.c build/io_helper.o -lcheck -o test/check_io_helper.test
 
 test/check_median.test: build/median.o test/check_median.c
