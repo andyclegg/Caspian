@@ -10,7 +10,7 @@
 #include "projector.h"
 
 /** A regular geospatial grid in projected coordinate space. */
-typedef struct {
+typedef struct grid_s {
    /** The width in pixels. */
    int width;
 
@@ -57,11 +57,17 @@ typedef struct {
 
    /** An initialised projector which transforms spherical coordinates to this grid. */
    projector *input_projector;
+
+   /**
+    * Free this grid.
+    *
+    * @param tofree The grid to free.
+    */
+   void (* free)(struct grid_s *tofree);
 } grid;
 
 // Function prototypes - implementations in grid.c
 grid *initialise_grid(int width, int height, float vertical_resolution, float horizontal_resolution, float vsample, float hsample, float central_x, float central_y, projector *input_projector);
 void set_time_constraints(grid *output_grid, float min, float max);
-void free_grid(grid *tofree);
 
 #endif

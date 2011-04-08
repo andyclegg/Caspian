@@ -69,17 +69,21 @@ doc/html/index.html: src/*
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
-build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test
+build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test
 
 test/check_data_handling.test: src/data_handling.c src/data_handling.h test/check_data_handling.c
 	gcc test/check_data_handling.c src/data_handling.c -lcheck -o test/check_data_handling.test
 
-test/check_rawfile_coordinate_reader.test: src/rawfile_coordinate_reader.c src/rawfile_coordinate_reader.h src/coordinate_reader.h src/projector.h test/check_rawfile_coordinate_reader.c
+test/check_rawfile_coordinate_reader.test: src/rawfile_coordinate_reader.c src/rawfile_coordinate_reader.h src/coordinate_reader.h build/proj_projector.o test/check_rawfile_coordinate_reader.c
 	gcc test/check_rawfile_coordinate_reader.c src/rawfile_coordinate_reader.c build/proj_projector.o -lcheck -lproj -o test/check_rawfile_coordinate_reader.test
+
+test/check_grid.test: src/grid.c src/grid.h build/proj_projector.o test/check_grid.c
+	gcc test/check_grid.c src/grid.c build/proj_projector.o -lcheck -lproj -o test/check_grid.test
 
 run_testcases: build_testcases
 	./test/check_data_handling.test
 	./test/check_rawfile_coordinate_reader.test
+	./test/check_grid.test
 
 .PHONY: clean
 clean:

@@ -521,6 +521,9 @@ int main(int argc, char **argv) {
       // Perform gridding
       perform_gridding(in, out, selected_reduction_function, &r_attrs, verbosity);
 
+      // Free the grid
+      out.grid_spec->free(out.grid_spec);
+
       // Unmap and close files
       if (write_data) {
          data_input_file->close(data_input_file);
