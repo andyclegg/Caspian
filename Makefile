@@ -70,7 +70,7 @@ doc/html/index.html: src/*
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
-build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test test/check_median.test test/check_result_set.test
+build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test test/check_median.test test/check_result_set.test test/check_proj_projector.test
 
 test/check_data_handling.test: build/data_handling.o test/check_data_handling.c
 	$(CHECK_CC) test/check_data_handling.c build/data_handling.o -o test/check_data_handling.test
@@ -90,6 +90,9 @@ test/check_median.test: build/median.o test/check_median.c
 test/check_result_set.test: build/result_set.o test/check_result_set.c
 	$(CHECK_CC) test/check_result_set.c build/result_set.o -o test/check_result_set.test
 
+test/check_proj_projector.test: build/proj_projector.o test/check_proj_projector.c
+	$(CHECK_CC) test/check_proj_projector.c build/proj_projector.o -lproj -o test/check_proj_projector.test
+
 run_testcases: build_testcases
 	./test/check_data_handling.test
 	./test/check_rawfile_coordinate_reader.test
@@ -97,6 +100,7 @@ run_testcases: build_testcases
 	./test/check_io_helper.test
 	./test/check_median.test
 	./test/check_result_set.test
+	./test/check_proj_projector.test
 
 .PHONY: clean
 clean:
