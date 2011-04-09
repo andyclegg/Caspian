@@ -29,7 +29,7 @@ typedef struct {
    char* name;
 
    /** The style of this function (e.g. coded or numeric) */
-   style type;
+   style data_style;
 
    /** The actual function call
     *

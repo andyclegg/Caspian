@@ -389,13 +389,13 @@ int main(int argc, char **argv) {
    }
 
    // Validate coded/non-coded functions/data types
-   if (selected_reduction_function.type == coded) {
+   if (selected_reduction_function.data_style == coded) {
       // Input and output dtype must be the same and coded
-      if (input_dtype.type != coded || output_dtype.type != coded || !dtype_equal(input_dtype, output_dtype)) {
-         fprintf(stderr, "When using a coded mapping function, input and output dtype must be the same, and of coded type\n");
+      if (input_dtype.data_style != coded || output_dtype.data_style != coded || !dtype_equal(input_dtype, output_dtype)) {
+         fprintf(stderr, "When using a coded mapping function, input and output dtype must be the same, and of coded style\n");
       }
-   } else if (selected_reduction_function.type == numeric) {
-      if (input_dtype.type != numeric || output_dtype.type != numeric) {
+   } else if (selected_reduction_function.data_style == numeric) {
+      if (input_dtype.data_style != numeric || output_dtype.data_style != numeric) {
          fprintf(stderr, "When using a numeric mapping function, input and output dtype must be numeric\n");
       }
    }
