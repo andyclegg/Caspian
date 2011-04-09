@@ -7,14 +7,14 @@ START_TEST(test_parse_uint8) {
    dtype parsed = dtype_string_parse("uint8");
    fail_unless(parsed.specifier == uint8, NULL);
    fail_unless(parsed.size == 1, NULL);
-   fail_unless(parsed.type == numeric, NULL);
+   fail_unless(parsed.data_style == numeric, NULL);
    fail_unless(strcmp(parsed.string, "uint8") == 0, NULL);
 } END_TEST
 
 START_TEST(test_parse_invalid) {
    dtype parsed = dtype_string_parse("not_a_valid_dtype");
    fail_unless(parsed.specifier == undef_type);
-   fail_unless(parsed.type == undef_style);
+   fail_unless(parsed.data_style == undef_style);
 } END_TEST
 
 START_TEST(test_numeric_handling) {
