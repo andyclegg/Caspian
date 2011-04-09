@@ -9,7 +9,7 @@ OPT_CC=$(CC) $(CFLAGS) $(OPT_FLAGS) -c
 CHECK_CC=$(CC) -lcheck -std=c99 -fopenmp -lm
 
 minimal: caspian quickview
-all: caspian projcalc debug docs quickview
+all: caspian projcalc debug docs quickview check
 
 caspian: bin/caspian
 projcalc: bin/projcalc
