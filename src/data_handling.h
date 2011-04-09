@@ -38,7 +38,7 @@ typedef struct dtype_s {
    size_t size;
 
    /** The style of this dtype (numeric, coded). */
-   style type;
+   style data_style;
 
    /** The string represention of this type. */
    char* string;

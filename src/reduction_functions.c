@@ -202,7 +202,7 @@ void reduce_numeric_weighted_mean(result_set *set, reduction_attrs *attrs, dimen
  */
 reduction_function get_reduction_function_by_name(char *name) {
    static reduction_function reduction_functions[] = {
-      {"undef", undef_type, NULL},
+      {"undef", undef_style, NULL},
       {"mean", numeric, &reduce_numeric_mean},
       {"weighted_mean", numeric, &reduce_numeric_weighted_mean},
       {"median", numeric, &reduce_numeric_median},
@@ -222,5 +222,5 @@ reduction_function get_reduction_function_by_name(char *name) {
 }
 
 int reduction_function_is_undef(reduction_function f) {
-   return (f.type == undef_style);
+   return (f.data_style == undef_style);
 }
