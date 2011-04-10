@@ -110,7 +110,10 @@ run_testcases: build_testcases
 	./test/check_reduction_functions.test
 	./test/check_result_set.test
 
-.PHONY: clean
+.PHONY: clean release
 clean:
 	rm -rf bin/* doc/* build/* test/*.test
 	latexmk src/doc/caspian.tex -C -cd
+
+release: clean docs
+	tar --directory=.. --exclude-vcs -czvf ../caspian.tar.gz caspian
