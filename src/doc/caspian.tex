@@ -61,17 +61,21 @@ The main controls over mapping are in the selection of the mapping function, and
 \subsection{Sampling Rate}
 While the horizontal and vertical resolution define the distance between pixel centres, the sampling rate defines the size of the search box which is used to gather data for that pixel (see Figure~\ref{fig:res_and_sampling}). The simplest case is when the sampling rate is equal to the resolution; in this case the box is equal to the pixel itself. However, to avoid gaps in the output image, it may be necessary to expand the search box outside the bounds of the pixel, in which case the sampling rate may be increased.
 
+To set the sampling rate, use \texttt{--vsample} and \texttt{--hsample}. By default these are equal to the vertical and horizontal resolutions respectively.
+
 \subsection{Mapping Function}
-There are currently four mapping functions; three of which can be used with numerical data and one of which can be used for coded data.
+There are currently five mapping functions; four of which can be used with numerical data and one of which can be used for coded data.
 \begin{description}
 \item[Mean] -- a simple mean of all selected points.
 \item[Weighted Mean] -- a mean of all selected points, weighted by distance. The distance is the euclidean distance between the selected point and the centre of the pixel (in metres).
 \item[Median] -- the value of the pixel is the median value of all selected points, regardless of their distance from the centre of the pixel.
+\item[Newest] -- uses additional per-pixel time information to select the newest pixel found in a given cell.
 \item[Nearest Neighbour (Coded)] -- the value of the pixel is the value of the nearest point to the centre.
 \end{description}
 
 
 \section{Usage}
+
 Once the projection parameters have been calculated, and the input data is assembled, usage is simple. For this example, the same projection as before has been used, and the data is assumed to be in float32 format. Sampling rates are set to 3x the resolution.
 \begin{verbatim}
 bin/caspian --input-data data --input-lats latitudes \
@@ -86,5 +90,12 @@ bin/caspian --input-data data --input-lats latitudes \
 \end{verbatim}
 
 The output files (uk\_data, uk\_lats, and uk\_lons) will all have the same size (equal to width*height); the uk\_lats and uk\_lons files specify geolocation for the projected data.
+
+\subsection{Re-using the spatial index}
+Caspian performs two main tasks; generating a spatial index to use for gridding, and then performing the actual gridding. A spatial index takes into account latitude, longitude (and potentially time) information for each pixel, and is specific to a given projection. However, it is not tied to a particular set of data values. Because of this, when gridding different products generated from the same set of data, it is possible to speed up the overall process by generating a spatial index once and using it for all further gridding tasks.
+
+To generate an index to save to disk, you must provide values for \texttt{--input-lats}, \texttt{--input-lons}, \texttt{--projection}, \texttt{--save-index}, and optionally \texttt{--input-time}. The index will then be generated, and saved to the file specified by \texttt{--save-index}.
+
+To load and use the index, run Caspian again, this time providing \texttt{--load-index} with the index filename, and leaving out the latitude, longitude and time filenames and the projection string. Caspian will load the index from disk and from there behave as normal.
 
 \end{document}
