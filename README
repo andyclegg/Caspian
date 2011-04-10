@@ -1,11 +1,12 @@
 CASPIAN - Modern gridding software for spatial data
 
 == Building ==
-Run 'make'. The only non-standard library used is PROJ.4.
 
-Run 'make docs' to build documentation, which uses LaTeX (and latexmk to build).
+Run 'make'. The only non-standard library used is PROJ.4. Caspian and a few utilities will be compiled and copied to the /bin directory.
 
-For convenience, a debug build can be built. Run 'make debug'
+Run 'make docs' to prepare the documentation. The documentation comes in 2 parts: a PDF user guide, and a HTML API reference guide. Required programs to build the documentation are Latex, latexmk, and doxygen.
+
+For convenience if any debugging is necessary, a debug build can be built. Run 'make debug'. You may also run the suite of unit tests by running 'make check' (the 'check' library is required for this).
 
 == Using ==
 Run bin/caspian --help for usage information. See the built docs for a higher level description.
