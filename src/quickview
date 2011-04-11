@@ -21,6 +21,7 @@ for inputfile in result.data_file:
 
    width = result.width
    height = input_data.size / width
+   if result.verbose: print "%d x %d" % (width, height)
    input_data = input_data.reshape(height, width)
    if (input_data == result.fillval).all():
       print "No data in image %s" % inputfile
