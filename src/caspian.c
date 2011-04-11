@@ -77,7 +77,7 @@ void help(char *executable) {
    printf("\n");
    printf(" Output data\n");
    printf("  -D/--output-data <filename>                                   Specify filename for output data\n");
-   printf("  -T/--output-dtype <dtype>        float32                      Specify dtype for output data file\n");
+   printf("  -T/--output-dtype <dtype>        value of --input-dtype       Specify dtype for output data file\n");
    printf("  -F/--output-fill-value <number>  -999.0                       Specify fill value for output data file\n");
    printf("  -A/--output-lats <filename>                                   Specify filename for output latitude\n");
    printf("  -O/--output-lons <filename>                                   Specify filename for output longitude\n");
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
 
    // Output data
    char *output_data_filename = NULL;
-   dtype output_dtype = {float32, 4, numeric, "float32"};
+   dtype output_dtype;
    NUMERIC_WORKING_TYPE output_fill_value = -999.0;
    char *output_lat_filename = NULL;
    char *output_lon_filename = NULL;
@@ -173,6 +173,7 @@ int main(int argc, char **argv) {
    // Control flow variables
    int generating_image = 0;
    int loading_index = 0;
+   int output_dtype_set = 0;
    int saving_index = 0;
    int using_default_projection_string = 1;
    int write_data = 0;
@@ -269,6 +270,7 @@ int main(int argc, char **argv) {
             break;
          case 'T':
             output_dtype = dtype_string_parse(optarg);
+            output_dtype_set = 1;
             break;
          case 'F':
             output_fill_value = atof(optarg);
@@ -389,14 +391,19 @@ int main(int argc, char **argv) {
    }
 
    // Validate coded/non-coded functions/data types
+   if (!output_dtype_set) {
+      output_dtype = input_dtype;
+   }
    if (selected_reduction_function.data_style == coded) {
       // Input and output dtype must be the same and coded
       if (input_dtype.data_style != coded || output_dtype.data_style != coded || !dtype_equal(input_dtype, output_dtype)) {
          fprintf(stderr, "When using a coded mapping function, input and output dtype must be the same, and of coded style\n");
+         return -1;
       }
    } else if (selected_reduction_function.data_style == numeric) {
       if (input_dtype.data_style != numeric || output_dtype.data_style != numeric) {
          fprintf(stderr, "When using a numeric mapping function, input and output dtype must be numeric\n");
+         return -1;
       }
    }
 
