@@ -57,7 +57,7 @@ int _rawfile_coordinate_reader_read(coordinate_reader *source, float *x, float *
    fread(t, sizeof(float), 1, internals->time_file);
    if (!isfinite(latitude) || !isfinite(longitude) || !isfinite(*t)) {
       fprintf(stderr, "Non-finite latitude/longitude/time read (NaN or Inf)\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Project the horizontal coordinates
@@ -157,7 +157,7 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
    rawfile_coordinate_reader *new_rawfile_reader = malloc(sizeof(rawfile_coordinate_reader));
    if (new_rawfile_reader == NULL) {
       fprintf(stderr, "Failed to allocate space for a rawfile_coordinate_reader\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    new_rawfile_reader->lat_file = lat_file;
@@ -169,7 +169,7 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
    coordinate_reader *new_coordinate_reader = malloc(sizeof(coordinate_reader));
    if (new_coordinate_reader == NULL) {
       fprintf(stderr, "Failed to allocate space for a coordinate_reader\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    new_coordinate_reader->internals = (void *)new_rawfile_reader;

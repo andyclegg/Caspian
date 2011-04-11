@@ -23,7 +23,7 @@ void result_set_insert(result_set *set, float x, float y, float t, int record_in
    result_set_item *new_item = malloc(sizeof(result_set_item));
    if (new_item == NULL) {
       fprintf(stderr, "Could not allocate space for a single result_set_item\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    new_item->x = x;
    new_item->y = y;
@@ -94,7 +94,7 @@ result_set *result_set_init() {
    result_set *set = malloc(sizeof(result_set));
    if (set == NULL) {
       fprintf(stderr, "Could not allocate space for a result_set struct\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    set->head = NULL;
    set->current = NULL;

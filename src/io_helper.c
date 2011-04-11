@@ -41,21 +41,21 @@ memory_mapped_file *open_memory_mapped_input_file(char *filename, unsigned int n
    memory_mapped_file *f = malloc(sizeof(memory_mapped_file));
    if (f == NULL) {
       fprintf(stderr, "Could not allocate space for a memory_mapped_file struct (!)\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Open the actual file
    f->file_descriptor = open(filename, O_RDONLY);
    if (f->file_descriptor == -1) {
       fprintf(stderr, "Failed to open input file %s (%s)\n", filename, strerror(errno));
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Map the data from the file into memory
    f->memory_mapped_data = mmap(0, number_bytes, PROT_READ, MAP_SHARED, f->file_descriptor, 0);
    if (f->memory_mapped_data == MAP_FAILED) {
       fprintf(stderr, "Failed to map data into memory (%s)\n", strerror(errno));
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Finish off the memory_mapped_file struct and return
@@ -76,7 +76,7 @@ memory_mapped_file *open_memory_mapped_output_file(char *filename, unsigned int 
    memory_mapped_file *f = malloc(sizeof(memory_mapped_file));
    if (f == NULL) {
       fprintf(stderr, "Could not allocate space for a memory_mapped_file struct (!)\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Create the actual file
@@ -86,7 +86,7 @@ memory_mapped_file *open_memory_mapped_output_file(char *filename, unsigned int 
    f->file_descriptor = open(filename, output_open_flags, creation_mode);
    if (f->file_descriptor == -1) {
       fprintf(stderr, "Failed to open output file %s (%s)\n", filename, strerror(errno));
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Allocate space in the file system for the requested number of bytes
@@ -114,14 +114,14 @@ memory_mapped_file *open_memory_mapped_output_file(char *filename, unsigned int 
             fprintf(stderr, "Unknown error (number %d)", fallocate_result);
       }
       fprintf(stderr, ")\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Map the output data into memory
    f->memory_mapped_data = mmap(0, number_bytes, PROT_WRITE, MAP_SHARED, f->file_descriptor, 0);
    if (f->memory_mapped_data == MAP_FAILED) {
       printf("Failed to map output into memory (%s)\n", strerror(errno));
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Finish off the memory_mapped_file struct and return

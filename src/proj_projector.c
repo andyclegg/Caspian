@@ -126,14 +126,14 @@ projector *get_proj_projector_from_file(FILE *input_file) {
    // Check projection string length
    if (projection_string_length == 0) {
       fprintf(stderr, "Read a projection string length of 0\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Read the projection string
    char *projection_string = calloc(projection_string_length, sizeof(char));
    if (projection_string == NULL) {
       fprintf(stderr, "Failed to allocate space (%d chars) for projection string\n", projection_string_length);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    fread(projection_string, sizeof(char), projection_string_length, input_file);
 
@@ -142,20 +142,20 @@ projector *get_proj_projector_from_file(FILE *input_file) {
       fprintf(stderr, "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n", projection_string_length, projection_string[projection_string_length - 1]);
       // Don't attempt to print out the projection string as we know it's
       // corrupt - very bad things may happen!
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    if (strlen(projection_string) != projection_string_length -1) {
       fprintf(stderr, "Corrupted string read from file (string length is wrong)\n");
       // Don't attempt to print out the projection string as we know it's
       // corrupt - very bad things may happen!
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Initialize the projection
    projPJ *projection = pj_init_plus(projection_string);
    if (projection == NULL) {
       fprintf(stderr, "Couldn't initialize projection '%s'\n", projection_string);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    projector *p = malloc(sizeof(projector));

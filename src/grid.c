@@ -34,7 +34,7 @@ grid *initialise_grid(int width, int height, float vertical_resolution, float ho
    grid *result = malloc(sizeof(grid));
    if (result == NULL) {
       fprintf(stderr, "Failed to allocate space for a grid struct.\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Store the values

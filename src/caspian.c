@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
 
    // Shortcut macro - allocate and check storage for the option string,
    // and copy the option string into the allocated space.
-   #define save_optarg_string(x) x = calloc(strlen(optarg) + 1, sizeof(char)); if (x == NULL) { fprintf(stderr, "Failed to allocate space to store option string"); exit(-1); }; strcpy(x, optarg)
+   #define save_optarg_string(x) x = calloc(strlen(optarg) + 1, sizeof(char)); if (x == NULL) { fprintf(stderr, "Failed to allocate space to store option string"); exit(EXIT_FAILURE); }; strcpy(x, optarg)
 
    int curarg, option_index = 0;
    while((curarg = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
@@ -291,28 +291,28 @@ int main(int argc, char **argv) {
             height = atoi(optarg);
             if (height <= 0) {
                fprintf(stderr, "Height must be a positive integer (got %d)\n", height);
-               exit(-1);
+               exit(EXIT_FAILURE);
             }
             break;
          case 'w':
             width = atoi(optarg);
             if (width <= 0) {
                fprintf(stderr, "Width must be a positive integer (got %d)\n", width);
-               exit(-1);
+               exit(EXIT_FAILURE);
             }
             break;
          case 'V':
             vertical_resolution = atof(optarg);
             if (vertical_resolution <= 0.0) {
                fprintf(stderr, "Vertical resolution must be a positive number (got %f)\n", vertical_resolution);
-               exit(-1);
+               exit(EXIT_FAILURE);
             }
             break;
          case 'H':
             horizontal_resolution = atof(optarg);
             if (horizontal_resolution <= 0.0) {
                fprintf(stderr, "Horizontal resolution must be a positive number (got %f)\n", horizontal_resolution);
-               exit(-1);
+               exit(EXIT_FAILURE);
             }
             break;
          case 'y':
@@ -325,21 +325,21 @@ int main(int argc, char **argv) {
             vertical_sampling = atof(optarg);
             if (vertical_sampling <= 0.0) {
                fprintf(stderr, "Vertical sampling resolution must be a positive number (got %f)\n", vertical_sampling);
-               exit(-1);
+               exit(EXIT_FAILURE);
             }
             break;
          case 's':
             horizontal_sampling = atof(optarg);
             if (horizontal_sampling <= 0.0) {
                fprintf(stderr, "Horizontal sampling resolution must be a positive number (got %f)\n", horizontal_sampling);
-               exit(-1);
+               exit(EXIT_FAILURE);
             }
             break;
          case 'r': // Reduction function
             selected_reduction_function = get_reduction_function_by_name(optarg);
             if (reduction_function_is_undef(selected_reduction_function)) {
                fprintf(stderr, "Unknown reduction function '%s'\n", optarg);
-               exit(-1);
+               exit(EXIT_FAILURE);
             }
             break;
          case 'q':
@@ -355,12 +355,12 @@ int main(int argc, char **argv) {
             break;
          case '?':
             help(argv[0]);
-            return 0;
+            return EXIT_SUCCESS;
 
          default:
             printf("Unrecognised option\n");
             help(argv[0]);
-            return -1;
+            return EXIT_FAILURE;
       }
    }
 
@@ -379,14 +379,14 @@ int main(int argc, char **argv) {
    if (!loading_index) {
       if (input_lat_filename == NULL || input_lon_filename == NULL || projection_string == NULL) {
          fprintf(stderr, "Unless you are loading a pre-generated index from disk, you must provide --input-lats, --input-lons, --input-time, and --projection\nSee --help for more information.\n");
-         return -1;
+         return EXIT_FAILURE;
       }
    }
 
    if (generating_image) {
       if (input_data_filename == NULL || output_data_filename == NULL) {
          fprintf(stderr, "When generating an image, you must provide --input-data and --output-data\nSee --help for more information.");
-         return -1;
+         return EXIT_FAILURE;
       }
    }
 
@@ -398,12 +398,12 @@ int main(int argc, char **argv) {
       // Input and output dtype must be the same and coded
       if (input_dtype.data_style != coded || output_dtype.data_style != coded || !dtype_equal(input_dtype, output_dtype)) {
          fprintf(stderr, "When using a coded mapping function, input and output dtype must be the same, and of coded style\n");
-         return -1;
+         return EXIT_FAILURE;
       }
    } else if (selected_reduction_function.data_style == numeric) {
       if (input_dtype.data_style != numeric || output_dtype.data_style != numeric) {
          fprintf(stderr, "When using a numeric mapping function, input and output dtype must be numeric\n");
-         return -1;
+         return EXIT_FAILURE;
       }
    }
 
@@ -426,7 +426,7 @@ int main(int argc, char **argv) {
       FILE *input_index_file = fopen(input_index_filename, "r");
       if (input_index_file == NULL) {
          fprintf(stderr, "Could not open index file %s (%s)\n", input_index_filename, strerror(errno));
-         return -1;
+         return EXIT_FAILURE;
       }
       data_index = read_kdtree_index_from_file(input_index_file);
       fclose(input_index_file);
@@ -437,14 +437,14 @@ int main(int argc, char **argv) {
       projector *input_projection = get_proj_projector_from_string(projection_string);
       if (input_projection == NULL) {
          fprintf(stderr, "Could not initialize projector\n");
-         return -1;
+         return EXIT_FAILURE;
       }
 
       // Build a coordinate reader
       coordinate_reader *reader = get_coordinate_reader_from_files(input_lat_filename, input_lon_filename, input_time_filename, input_projection);
       if (reader == NULL) {
          fprintf(stderr, "Could not initialize coordinate reader\n");
-         return -1;
+         return EXIT_FAILURE;
       }
 
       // Build the index (kdtree is currently hardcoded)
@@ -453,7 +453,7 @@ int main(int argc, char **argv) {
       data_index = generate_kdtree_index_from_coordinate_reader(reader);
       if (!data_index) {
          fprintf(stderr, "Failed to build index\n");
-         return -1;
+         return EXIT_FAILURE;
       }
       time_t end_time = time(NULL);
       if (verbosity > 0) printf("Building index took %d seconds\n", (int) (end_time - start_time));
@@ -491,7 +491,7 @@ int main(int argc, char **argv) {
       out.grid_spec = initialise_grid(width, height, vertical_resolution, horizontal_resolution, vertical_sampling, horizontal_sampling, central_x, central_y, data_index->input_projector);
       if (out.grid_spec == NULL) {
          fprintf(stderr, "Failed to initialise output grid\n");
-         return -1;
+         return EXIT_FAILURE;
       }
       set_time_constraints(out.grid_spec, time_min, time_max);
 
@@ -557,5 +557,5 @@ int main(int argc, char **argv) {
    if (!using_default_projection_string) free(projection_string);
    data_index->free(data_index);
 
-   return 0;
+   return EXIT_SUCCESS;
 }
