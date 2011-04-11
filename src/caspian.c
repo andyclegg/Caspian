@@ -99,7 +99,7 @@ void help(char *executable) {
    printf("  -+/--verbose                                                  Increase verbosity\n");
    printf("  -?/--help                                                     Show this help message\n");
    printf("\n");
-   printf("Numeric functions: mean, weighted_mean, median, newest\n");
+   printf("Numeric functions: mean, weighted_mean, median, newest, numeric_nearest_neighbour\n");
    printf("Numeric function dtypes: ");
    printf("uint8, uint16, uint32, ");
    #ifdef SIXTYFOURBIT
@@ -111,7 +111,7 @@ void help(char *executable) {
    #endif
    printf("float32, float64\n");
    printf("\n");
-   printf("Coded functions: nearest_neighbour\n");
+   printf("Coded functions: coded_nearest_neighbour\n");
    printf("Coded function dtypes: coded8, coded16, coded32, coded64\n");
 }
 
