@@ -92,6 +92,42 @@ void reduce_coded_nearest_neighbour(result_set *set, reduction_attrs *attrs, dim
 }
 
 /**
+ * Reduce numeric data by using the nearest neighbour.
+ *
+ * @see reduction_function::call
+ */
+void reduce_numeric_nearest_neighbour(result_set *set, reduction_attrs *attrs, dimension_bounds bounds, void *input_data, void *output_data, int output_index, dtype input_dtype, dtype output_dtype) {
+   register float lowest_distance = FLT_MAX;
+   NUMERIC_WORKING_TYPE best_value = attrs->output_fill_value;
+
+   // Calculate the midpoint of the cell
+   float32_t central_x = (bounds[X + LOWER] + bounds[X + UPPER]) / 2.0;
+   float32_t central_y = (bounds[Y + LOWER] + bounds[Y + UPPER]) / 2.0;
+
+   result_set_item *current_item;
+   register float current_distance;
+   register float current_value;
+
+   // Iterate over all items in the result set, calculating the distance
+   // for each item and storing the value of the nearest item
+   while ((current_item = set->iterate(set)) != NULL) {
+      current_value = numeric_get(input_data, input_dtype, current_item->record_index);
+      if (current_value == attrs->input_fill_value) {
+         continue;
+      }
+      current_distance = powf(central_x - current_item->x, 2) + powf(central_y - current_item->y, 2);
+      if (current_distance < lowest_distance) {
+         // We have a new nearest neighbour, replace in the value
+         lowest_distance = current_distance;
+         best_value = current_value;
+      }
+   }
+
+   // Store the value
+   numeric_put(output_data, output_dtype, output_index, best_value);
+}
+
+/**
  * Reduce numeric data by using the value with the last time stamp.
  *
  * @see reduction_function::call
@@ -206,10 +242,11 @@ reduction_function get_reduction_function_by_name(char *name) {
       {"mean", numeric, &reduce_numeric_mean},
       {"weighted_mean", numeric, &reduce_numeric_weighted_mean},
       {"median", numeric, &reduce_numeric_median},
-      {"nearest_neighbour", coded, &reduce_coded_nearest_neighbour},
+      {"coded_nearest_neighbour", coded, &reduce_coded_nearest_neighbour},
+      {"numeric_nearest_neighbour", numeric, &reduce_numeric_nearest_neighbour},
       {"newest", numeric, &reduce_numeric_newest},
    };
-   static int number_reduction_functions = 6;
+   static int number_reduction_functions = 7;
 
    reduction_function result = reduction_functions[0]; //undef
 
