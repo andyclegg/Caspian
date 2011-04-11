@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
    if (argc != 8) {
       printf("Incorrect number of arguments (got %d, expected 8)\n", argc);
       printf("Usage: projection_string northern_latitude southern_latitude eastern_longitude western_longitude horizontal_resolution vertical_resolution\n");
-      return -1;
+      return EXIT_FAILURE;
    }
 
    char *projection_string = argv[1];
@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
    projPJ *projection = pj_init_plus(projection_string);
    if (projection == NULL) {
       fprintf(stderr, "Couldn't initialize projection '%s'\n", projection_string);
-      return -1;
+      return EXIT_FAILURE;
    }
 
    projUV projection_input, tr_output, bl_output;
@@ -52,5 +52,5 @@ int main(int argc, char **argv) {
    printf("Width: %d\n", width);
    printf("Height: %d\n", height);
 
-   return 0;
+   return EXIT_SUCCESS;
 }

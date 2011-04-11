@@ -45,7 +45,7 @@ NUMERIC_WORKING_TYPE numeric_get(void *data, dtype input_dtype, int index) {
          return (NUMERIC_WORKING_TYPE) ((float64_t *) data)[index];
       default:
          fprintf(stderr, "numeric_get received an invalid dtype (%d), quitting.\n", input_dtype.specifier);
-         exit(-1);
+         exit(EXIT_FAILURE);
    }
 }
 
@@ -100,7 +100,7 @@ void numeric_put(void *data, dtype output_dtype, int index, NUMERIC_WORKING_TYPE
          break;
       default:
          fprintf(stderr, "Unknown dtype '%s' (this is probably a bug in Caspian).\n", output_dtype.string);
-         exit(-1);
+         exit(EXIT_FAILURE);
    }
 }
 
@@ -172,6 +172,6 @@ dtype dtype_string_parse(char *dtype_string) {
       return output;
    } else {
       fprintf(stderr, "Could not parse dtype '%s'.\n", dtype_string);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 }

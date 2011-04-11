@@ -47,7 +47,7 @@ kdtree *construct_tree(unsigned int num_observations) {
    kdtree *output_tree = malloc(sizeof(kdtree));
    if (output_tree == NULL) {
       fprintf(stderr, "Could not allocate space for a kdtree struct.\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    total_allocation += sizeof(kdtree);
 
@@ -73,7 +73,7 @@ kdtree *construct_tree(unsigned int num_observations) {
    output_tree->tree_nodes = malloc(kdtree_node_allocate_size);
    if (output_tree->tree_nodes == NULL) {
       fprintf(stderr, "Could not allocate %Zd bytes to store the kdtree nodes\n", kdtree_node_allocate_size);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    total_allocation += kdtree_node_allocate_size;
    for (unsigned int i=0; i<tree_number_of_nodes; i++) {
@@ -85,7 +85,7 @@ kdtree *construct_tree(unsigned int num_observations) {
    output_tree->observations = malloc(observation_allocate_size);
    if (output_tree->observations == NULL) {
       fprintf(stderr, "Could not allocate %Zd bytes to store the kdtree observations\n", observation_allocate_size);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    total_allocation += observation_allocate_size;
 
@@ -493,7 +493,7 @@ void fill_tree_from_reader(kdtree *tree_p, coordinate_reader *reader) {
       result = reader->read(reader, &observations[current_index].dimensions[X], &observations[current_index].dimensions[Y], &observations[current_index].dimensions[T]);
       if (!result) {
          printf("Failed to read all observations from files\n");
-         exit(-1);
+         exit(EXIT_FAILURE);
       }
    }
 
@@ -553,14 +553,14 @@ spatial_index *read_kdtree_index_from_file(FILE *input_file) {
 
    if (file_format_number != KDTREE_FILE_FORMAT) {
       fprintf(stderr, "Wrong disk file format (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Get the projector from the file
    projector *input_projector = get_proj_projector_from_file(input_file);
    if (input_projector == NULL) {
       fprintf(stderr, "Couldn't obtain input projection from file\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Read the sizes of data for the kdtree
@@ -575,7 +575,7 @@ spatial_index *read_kdtree_index_from_file(FILE *input_file) {
    // Check the computed number of tree nodes against the number read from file
    if (tree_num_nodes != tree_p->tree_num_nodes) {
       fprintf(stderr, "Mismatch in number of tree nodes (read %d, computed %d)\n", tree_num_nodes, tree_p->tree_num_nodes);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    // Read the data into the tree
@@ -586,7 +586,7 @@ spatial_index *read_kdtree_index_from_file(FILE *input_file) {
    fread(&file_format_number, sizeof(unsigned int), 1, input_file);
    if (file_format_number != KDTREE_FILE_FORMAT) {
       fprintf(stderr, "Wrong concluding header (read %d, expected %d)\n", file_format_number, KDTREE_FILE_FORMAT);
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    #ifdef DEBUG
@@ -633,7 +633,7 @@ spatial_index *generate_kdtree_index_from_coordinate_reader(coordinate_reader *r
    spatial_index *output_index = malloc(sizeof(spatial_index));
    if (output_index == NULL) {
       fprintf(stderr, "Failed to allocate space for index\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    output_index->data_structure = root_p;

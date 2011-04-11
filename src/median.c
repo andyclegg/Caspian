@@ -132,7 +132,7 @@ static NUMERIC_WORKING_TYPE mean_double_selection(NUMERIC_WORKING_TYPE *values, 
       } else {
          //Shouldn't get here!
          fprintf(stderr, "A logical error occurred in the mean_double_selection algorithm - this is most likely a bug in Caspian.\n");
-         exit(-1);
+         exit(EXIT_FAILURE);
       }
    }
 }
