@@ -92,9 +92,23 @@ START_TEST(test_numeric_median) {
 
 } END_TEST
 
+START_TEST(test_numeric_nearest_neighbour) {
+   // Get the reduction function
+   reduction_function f = get_reduction_function_by_name("numeric_nearest_neighbour");
+   fail_if(reduction_function_is_undef(f));
+
+   // Reduce the data
+   f.call(results, &r_attrs, bounds, input_data, output_data, 10, float32_d, float32_d);
+
+   // Get the result
+   NUMERIC_WORKING_TYPE result = numeric_get(output_data, float32_d, 10);
+   fail_unless(result == 245.0);
+
+} END_TEST
+
 START_TEST(test_coded_nearest_neighbour) {
    // Get the reduction function
-   reduction_function f = get_reduction_function_by_name("nearest_neighbour");
+   reduction_function f = get_reduction_function_by_name("coded_nearest_neighbour");
    fail_if(reduction_function_is_undef(f));
 
    dtype coded32_d = dtype_string_parse("coded32");
@@ -148,11 +162,17 @@ Suite *reduction_function_suite(void) {
    tcase_add_test(median_testcase, test_numeric_median);
    suite_add_tcase(s, median_testcase);
 
-   // Nearest neighbour testcase
-   TCase *nn_testcase = tcase_create("nearest_neighbour");
-   tcase_add_checked_fixture(nn_testcase, setup, teardown);
-   tcase_add_test(nn_testcase, test_coded_nearest_neighbour);
-   suite_add_tcase(s, nn_testcase);
+   // Coded Nearest neighbour testcase
+   TCase *coded_nearest_neighbour_testcase = tcase_create("coded_nearest_neighbour");
+   tcase_add_checked_fixture(coded_nearest_neighbour_testcase, setup, teardown);
+   tcase_add_test(coded_nearest_neighbour_testcase, test_coded_nearest_neighbour);
+   suite_add_tcase(s, coded_nearest_neighbour_testcase);
+
+   // Numeric Nearest neighbour testcase
+   TCase *numeric_nearest_neighbour_testcase = tcase_create("numeric_nearest_neighbour");
+   tcase_add_checked_fixture(numeric_nearest_neighbour_testcase, setup, teardown);
+   tcase_add_test(numeric_nearest_neighbour_testcase, test_numeric_nearest_neighbour);
+   suite_add_tcase(s, numeric_nearest_neighbour_testcase);
 
    // Newest testcase
    TCase *newest_testcase = tcase_create("newest");
