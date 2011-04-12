@@ -4,7 +4,18 @@
 #include "../src/median.h"
 #include "../src/data_handling.h"
 
+START_TEST(zero_length_check) {
+   // Test with a zero length list
+   NUMERIC_WORKING_TYPE test_numbers_0[] = {};
+   NUMERIC_WORKING_TYPE result_0 = median(test_numbers_0, 0);
+} END_TEST
+
 START_TEST(test_median) {
+   // Test with a single number
+   NUMERIC_WORKING_TYPE test_numbers_0[] = {3.14159};
+   NUMERIC_WORKING_TYPE result_0 = median(test_numbers_0, 1);
+   fail_unless(result_0 == 3.14159);
+
    // Test with an odd length list
    NUMERIC_WORKING_TYPE test_numbers_1[] = {5.0, 1.0, 3.0};
    NUMERIC_WORKING_TYPE result_1 = median(test_numbers_1, 3);
@@ -18,6 +29,11 @@ START_TEST(test_median) {
 
 Suite *median_suite(void) {
    Suite *s = suite_create("median");
+
+   // zero-length test case
+   TCase *zero_length_testcase = tcase_create("zero-length list");
+   tcase_add_exit_test(zero_length_testcase, zero_length_check, EXIT_FAILURE);
+   suite_add_tcase(s, zero_length_testcase);
 
    // median test case
    TCase *median_testcase = tcase_create("median");
