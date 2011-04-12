@@ -375,6 +375,13 @@ int main(int argc, char **argv) {
    printf("writing lons: %d\n", write_lons);
    #endif
 
+   // Check that the program is actually going to do something
+   if (!saving_index && !generating_image) {
+      fprintf(stderr, "Without building and saving an index, or generating an image, there is nothing to do.\n");
+      return EXIT_FAILURE;
+   }
+
+
    // Check we have required options - required options depends on mode of operation
    if (!loading_index) {
       if (input_lat_filename == NULL || input_lon_filename == NULL || projection_string == NULL) {
@@ -449,14 +456,14 @@ int main(int argc, char **argv) {
 
       // Build the index (kdtree is currently hardcoded)
       if (verbosity > 0) printf("Building indices\n");
-      time_t start_time = time(NULL);
+      time_t index_start_time = time(NULL);
       data_index = generate_kdtree_index_from_coordinate_reader(reader);
       if (!data_index) {
          fprintf(stderr, "Failed to build index\n");
          return EXIT_FAILURE;
       }
-      time_t end_time = time(NULL);
-      if (verbosity > 0) printf("Building index took %d seconds\n", (int) (end_time - start_time));
+      time_t index_end_time = time(NULL);
+      if (verbosity > 0) printf("Building index took %d seconds\n", (int) (index_end_time - index_start_time));
 
       // Get rid of the coordinate reader - no longer needed
       reader->free(reader);
@@ -526,7 +533,11 @@ int main(int argc, char **argv) {
       r_attrs.output_fill_value = output_fill_value;
 
       // Perform gridding
+      if (verbosity > 0) printf("Gridding\n");
+      time_t gridding_start_time = time(NULL);
       perform_gridding(in, out, selected_reduction_function, &r_attrs, verbosity);
+      time_t gridding_end_time = time(NULL);
+      if (verbosity > 0) printf("Gridding took %d seconds\n", (int) (gridding_end_time - gridding_start_time));
 
       // Free the grid
       out.grid_spec->free(out.grid_spec);
