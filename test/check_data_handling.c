@@ -58,7 +58,7 @@ Suite *dtype_suite(void) {
    // Parsing test case
    TCase *parse_testcase = tcase_create("parse");
    tcase_add_test(parse_testcase, test_parse_uint8);
-   tcase_add_exit_test(parse_testcase, test_parse_invalid, -1);
+   tcase_add_exit_test(parse_testcase, test_parse_invalid, EXIT_FAILURE);
    suite_add_tcase(s, parse_testcase);
 
    // Numeric data handling

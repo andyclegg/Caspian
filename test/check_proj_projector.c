@@ -66,7 +66,7 @@ Suite *proj_projector_suite(void) {
    // Testt error handling
    TCase *invalid_proj_testcase = tcase_create("proj-invalid");
    tcase_add_test(invalid_proj_testcase, test_proj_invalid);
-   tcase_add_exit_test(invalid_proj_testcase, test_proj_invalid_deserialize, -1);
+   tcase_add_exit_test(invalid_proj_testcase, test_proj_invalid_deserialize, EXIT_FAILURE);
    suite_add_tcase(s, invalid_proj_testcase);
 
    // Test invalid deserialization
