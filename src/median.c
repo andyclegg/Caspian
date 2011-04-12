@@ -147,6 +147,10 @@ static NUMERIC_WORKING_TYPE mean_double_selection(NUMERIC_WORKING_TYPE *values, 
 NUMERIC_WORKING_TYPE median(NUMERIC_WORKING_TYPE *values, int length)
 {
    // Shortcuts for the trivial cases
+   if (length==0) {
+      fprintf(stderr, "median called with 0 values - a bug in Caspian\n");
+      exit(EXIT_FAILURE);
+   }
    if (length==1) return values[0];
    if (length==2) return (values[0] + values[1]) / 2.0;
 
