@@ -99,7 +99,7 @@ void _proj_free(projector *p) {
 projector *get_proj_projector_from_string(char *projection_string) {
    projPJ *projection = pj_init_plus(projection_string);
    if (projection == NULL) {
-      fprintf(stderr, "Couldn't initialise projection '%s'\n", projection_string);
+      fprintf(stderr, "Couldn't initialise projection '%s' (Proj error message: '%s')\n", projection_string, pj_strerrno(*pj_get_errno_ref()));
       return NULL;
    }
 
@@ -154,7 +154,7 @@ projector *get_proj_projector_from_file(FILE *input_file) {
    // Initialize the projection
    projPJ *projection = pj_init_plus(projection_string);
    if (projection == NULL) {
-      fprintf(stderr, "Couldn't initialize projection '%s'\n", projection_string);
+      fprintf(stderr, "Couldn't initialise projection '%s' (Proj error message: '%s')\n", projection_string, pj_strerrno(*pj_get_errno_ref()));
       exit(EXIT_FAILURE);
    }
 
