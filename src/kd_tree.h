@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Data structures and defines for use with kdtrees.
  */

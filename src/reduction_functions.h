@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * A generic interface for data reduction functions.
  */

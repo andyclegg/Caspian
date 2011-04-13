@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Defines data structures for representing data types and establishes the numeric working type
  */

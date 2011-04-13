@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Implementation of various reduction algorithms.
  */

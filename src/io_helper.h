@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Defines a memory-mapped file interface.
  */

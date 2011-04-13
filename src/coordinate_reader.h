@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Defines the coordinate_reader interface.
  */

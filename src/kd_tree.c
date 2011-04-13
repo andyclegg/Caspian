@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Implementation of an adaptive kd-tree, specific to 2-dimensional horizontal coordinates.
  */

@@ -21,7 +21,6 @@
 
 /**
  * @file
- * @author Andrew Clegg
  *
  * Implements command-line functionality for Caspian.
  */

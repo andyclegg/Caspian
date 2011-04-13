@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Implentation of a data structure which reads latitude/longitude/time observations, projects the latitude and longitude, and returns the results.
  */
