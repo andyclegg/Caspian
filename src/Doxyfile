@@ -1623,7 +1623,7 @@ INCLUDE_GRAPH          = NO
 # documented header file showing the documented files that directly or 
 # indirectly include this file.
 
-INCLUDED_BY_GRAPH      = YES
+INCLUDED_BY_GRAPH      = NO
 
 # If the CALL_GRAPH and HAVE_DOT options are set to YES then 
 # doxygen will generate a call dependency graph for every global function 
@@ -1709,7 +1709,7 @@ DOT_TRANSPARENT        = NO
 # makes dot run faster, but since only newer versions of dot (>1.8.10) 
 # support this, this feature is disabled by default.
 
-DOT_MULTI_TARGETS      = NO
+DOT_MULTI_TARGETS      = YES
 
 # If the GENERATE_LEGEND tag is set to YES (the default) Doxygen will 
 # generate a legend page explaining the meaning of the various boxes and 
