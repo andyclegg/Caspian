@@ -222,6 +222,7 @@ result_set *query_kdtree(spatial_index *toquery, dimension_bounds bounds) {
  *
  * @param tree_p The kdtree to search.
  * @param target_point A pointer to a 2-array of floats (X, then Y)
+ * @param tree_index The index to the current tree node being searched
  * @return The closest observation to the given point.
  */
 observation *nearest_neighbour_recursive(kdtree *tree_p, float *target_point, unsigned int tree_index) {
