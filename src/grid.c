@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Contains functions for initialising, configuring and freeing  a grid
  */

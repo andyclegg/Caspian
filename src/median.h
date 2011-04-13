@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  */
 #ifndef HEADER_MEDIAN
 #define HEADER_MEDIAN

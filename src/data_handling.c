@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Implements methods for retrieving and storing data of different types from untyped memory arrays.
  */

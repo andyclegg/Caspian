@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Defines a raw-file backed implementation of coordinate_reader.
  */

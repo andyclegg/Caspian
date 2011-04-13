@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Specifies data structure to represent input data (actual data + type), and output data (output files, type + grid)
  */

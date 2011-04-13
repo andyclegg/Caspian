@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Implementation of an efficient algorithm for finding the median of an unsorted list of numbers.
  */

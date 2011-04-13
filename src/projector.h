@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  *
  * Defines a generic interface for projecting and inverse projecting coordinates.
  */

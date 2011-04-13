@@ -1,6 +1,5 @@
 /**
  * @file
- * @author Andrew Clegg
  */
 #ifndef HEADER_GRIDDING
 #define HEADER_GRIDDING
