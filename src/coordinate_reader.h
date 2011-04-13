@@ -9,7 +9,7 @@
 #include "projector.h"
 
 /**
- * Generic reader that incrementally reads out sets of coordinates.
+ * Generic reader that incrementally reads out sets of projected coordinates.
  *
  * Implementations could include reading coordinates from various file
  * formats, programatically generating coordinates, or reading coordinates
@@ -35,7 +35,8 @@ typedef struct coordinate_reader_s {
    void (*free)(struct coordinate_reader_s *tofree);
 
    /**
-    * Read a single set of values from this coordinate reader.
+    * Read a single set of values from this coordinate reader. Implementors should use the projector instance to project
+    * spherical coordinates into the correct projection before storing the coordinates.
     *
     * @param source The coordinate reader from which to read the values.
     * @param x The memory to store the x value into.
