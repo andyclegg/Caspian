@@ -55,13 +55,13 @@ typedef struct dtype_s {
 #define NUMERIC_WORKING_TYPE float32_t
 #endif
 
-/** Define X as having index 0 (e.g. in arrays) */
+/** Define X as having index 0 (in arrays) */
 #define X  0
 
-/** Define Y as having index 1 (e.g. in arrays) */
+/** Define Y as having index 1 (in arrays) */
 #define Y 1
 
-/** Define T as having index 2 (e.g. in arrays) */
+/** Define T as having index 2 (in arrays) */
 #define T 2
 
 /** Lower bounds positioned at dimension + 0 */
