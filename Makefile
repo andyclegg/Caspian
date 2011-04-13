@@ -3,7 +3,7 @@ OBJECTS=build/median.o build/caspian.o build/result_set.o build/rawfile_coordina
 CC=gcc
 LDFLAGS=-lm -lproj
 CFLAGS=-fopenmp -std=c99 -Wall -Werror
-OPT_FLAGS=-O3 -mtune=native
+OPT_FLAGS=-O3 -march=native
 DEBUG_FLAGS=-DDEBUG -ggdb
 OPT_CC=$(CC) $(CFLAGS) $(OPT_FLAGS) -c
 CHECK_CC=$(CC) -lcheck -std=c99 -fopenmp -lm
