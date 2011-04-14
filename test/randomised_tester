@@ -1,0 +1,188 @@
+#!/usr/bin/env python
+from __future__ import print_function
+import argparse
+import numpy
+import os
+import random
+import shutil
+import subprocess
+import tempfile
+
+# Parse the command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-t","--tests",action="store",dest="tests",default=10,type=int)
+parser.add_argument("caspian_executable", type=str)
+result = parser.parse_args()
+
+data_types = [
+   ('uint8', 8),
+   ('int8', 8),
+   ('uint16', 16),
+   ('int16', 16),
+   ('uint32', 32),
+   ('int32', 32),
+   ('uint64', 64),
+   ('int64', 64),
+   ('float32', 32),
+   ('float64', 64)
+]
+
+known_signal_codes = {
+   1: 'Hangup',
+   2: 'Interrupt',
+   3: 'Quit and dump core',
+   4: 'Illegal instruction',
+   5: 'Trace/breakpoint trap',
+   6: 'Process aborted',
+   7: 'Bus error: "access to undefined portion of memory object"',
+   8: 'Floating point exception: "erroneous arithmetic operation"',
+   9: 'Kill (terminate immediately)',
+   10: 'User-defined 1',
+   11: 'Segmentation violation',
+   12: 'User-defined 2',
+   13: 'Write to pipe with no one reading',
+   14: 'Signal raised by alarm',
+   15: 'Termination (request to terminate)',
+   17: 'Child process terminated, stopped (or continued*)',
+   18: 'Continue if stopped',
+   19: 'Stop executing temporarily',
+   20: 'Terminal stop signal',
+   21: 'Background process attempting to read from tty ("in")',
+   22: 'Background process attempting to write to tty ("out")',
+   23: 'Urgent data available on socket',
+   24: 'CPU time limit exceeded',
+   25: 'File size limit exceeded',
+   26: 'Signal raised by timer counting virtual time: "virtual timer expired"',
+   27: 'Profiling timer expired',
+   29: 'Pollable event',
+   31: 'Bad syscall',
+}
+
+for test_number in range(result.tests):
+   # Build a command as list of (option, argument) tuples
+   command = []
+
+   # Create a directory for input and output files
+   working_directory = tempfile.mkdtemp()
+
+   # Generate a number of observations to use for input data
+   number_of_observations = random.randrange(0,10**6)
+
+   # Create input data
+   data_type, bytes_per_observation = random.choice(data_types)
+
+   data = numpy.random.randn(number_of_observations).astype(data_type)
+   data_location = os.path.join(working_directory, 'data')
+   data.tofile(data_location)
+   command.append(('--input-data', data_location))
+   command.append(('--input-dtype', data_type))
+   command.append(('--input-fill-value', str(random.random())))
+
+   # Create geolocation/time information
+   if random.random() < 0.95:
+      geolocation_number_of_observations = number_of_observations
+   else:
+      geolocation_number_of_observations = random.randrange(0,10**6)
+
+   lats = numpy.random.randn(geolocation_number_of_observations)
+   lats_location = os.path.join(working_directory, 'lats')
+   lats.tofile(lats_location)
+   command.append(('--input-lats', lats_location))
+
+   lons = numpy.random.randn(geolocation_number_of_observations)
+   lons_location = os.path.join(working_directory, 'lons')
+   lons.tofile(lons_location)
+   command.append(('--input-lons', lons_location))
+
+   time = numpy.random.randn(geolocation_number_of_observations)
+   time_location = os.path.join(working_directory, 'time')
+   time.tofile(time_location)
+   command.append(('--input-time', time_location))
+
+   # Create projection string
+   command.append(('--projection', '+proj=merc +ellps=WGS84 +lat_ts=%f +lon_0=%f' % (random.uniform(-100,100), random.uniform(-200,200))))
+
+   # Save Index
+   command.append(('--save-index', os.path.join(working_directory, 'index')))
+
+   # Load Index - only do this on rare occasions (as the index will not be valid)
+   index_data = numpy.random.randn(10**5)
+   index_location = os.path.join(working_directory, 'saved_index')
+   index_data.tofile(index_location)
+   command.append(('--load-index', index_location))
+
+
+   # Output data
+   command.append(('--output-data', os.path.join(working_directory, 'output_data')))
+
+   # Output dtype
+   command.append(('--output-dtype', random.choice(data_types)[0]))
+
+   # Output fill value
+   command.append(('--output-fill-value', str(random.random())))
+
+   # Output lats/lons
+   command.append(('--output-lats', os.path.join(working_directory, 'output_lats')))
+   command.append(('--output-lons', os.path.join(working_directory, 'output_lons')))
+
+   # Height / Width
+   command.append(('--height', str(random.randint(-100,1000))))
+   command.append(('--width', str(random.randint(-100,1000))))
+
+   # Vertical / Horizontal resolution
+   command.append(('--vres', str(random.uniform(-100,1000))))
+   command.append(('--hres', str(random.uniform(-100,1000))))
+
+   # Central X/Y
+   command.append(('central-x', str(random.uniform(-10000,10000))))
+   command.append(('central-y', str(random.uniform(-10000,10000))))
+
+   # Vertical/Horizontal sampling
+   command.append(('--vsample', str(random.uniform(-100,1000))))
+   command.append(('--hsample', str(random.uniform(-100,1000))))
+
+   # Reduction function
+   command.append(('--reduction-function', random.choice(
+      ['mean', 'median', 'weighted_mean', 'coded_nearest_neighbour', 'numeric_nearest_neighbour', 'newest', 'not_a_real_function'])))
+
+   # Time min/max
+   command.append(('--time-min', str(random.uniform(-1000,1000))))
+   command.append(('--time-max', str(random.uniform(-1000,1000))))
+
+   # Shuffle the command
+   random.shuffle(command)
+
+   # Delete a random number of command items
+   del command[random.randrange(len(command)/2,len(command)):]
+
+   # Turn into a full executable command
+   full_command = [result.caspian_executable]
+   for option, argument in command:
+      full_command.append(option)
+      full_command.append(argument)
+
+   # Potentially add a verbose option
+   if random.random() > 1.0:
+      full_command.append('--verbose')
+
+   print('Test %d of %d...' % (test_number + 1, result.tests), end='')
+
+   process = subprocess.Popen(full_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+   stdout, stderr = process.communicate()
+   if process.returncode < 0:
+      print('Test failed (returncode of %d)' % process.returncode)
+      try:
+         print(known_signal_codes[-1*process.returncode])
+      except KeyError:
+         print("Unknown return code")
+      print('Failed command follows:')
+      print(' '.join(full_command))
+      print('Stdout:')
+      print(stdout)
+      print('Stderr:')
+      print(stderr)
+   else:
+      print ('Test passed (returncode of %d)' % process.returncode)
+
+   shutil.rmtree(working_directory)
+
