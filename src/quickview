@@ -11,13 +11,14 @@ parser.add_argument("-v","--verbose",action="store_true",dest="verbose")
 parser.add_argument("-m","--min",action="store",dest="min",default=None,type=float)
 parser.add_argument("-M","--max",action="store",dest="max",default=None,type=float)
 parser.add_argument("-f","--fill-value",action="store",dest="fillval",default=-999.0,type=float)
+parser.add_argument("-t","--type",action="store",dest="type",default="float32")
 parser.add_argument("width", type=int)
 parser.add_argument("data_file", nargs='+')
 result = parser.parse_args()
 
 for inputfile in result.data_file:
    if result.verbose: print inputfile
-   input_data = numpy.fromfile(inputfile, 'float32')
+   input_data = numpy.fromfile(inputfile, result.type)
 
    width = result.width
    height = input_data.size / width
