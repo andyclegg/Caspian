@@ -58,6 +58,8 @@ known_signal_codes = {
    31: 'Bad syscall',
 }
 
+failed_tests = []
+
 for test_number in range(result.tests):
    # Build a command as list of (option, argument) tuples
    command = []
@@ -181,8 +183,21 @@ for test_number in range(result.tests):
       print(stdout)
       print('Stderr:')
       print(stderr)
+      failed_tests.append((full_command, process.returncode))
    else:
       print ('Test passed (returncode of %d)' % process.returncode)
 
    shutil.rmtree(working_directory)
 
+print("-" * 80)
+if (len(failed_tests) > 0):
+   print('%d of %d tests failed:' % (len(failed_tests), result.tests))
+   for command, returncode in failed_tests:
+      try:
+         print('Return code %d: %s' % (-1*returncode, known_signal_codes[-1*returncode]))
+      except KeyError:
+         print('Return code %d (Unknown)' % -1*returncode)
+      print(' '.join(command))
+      print("-" * 40)
+else:
+   print('All tests passed')
