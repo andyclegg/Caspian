@@ -9,7 +9,9 @@ int main(int argc, char **argv) {
    if (argc != 8) {
       printf("Incorrect number of arguments (got %d, expected 8)\n", argc);
       printf(
-         "Usage: projection_string northern_latitude southern_latitude eastern_longitude western_longitude horizontal_resolution vertical_resolution\n");
+         "Usage: projection_string northern_latitude southern_latitude "\
+         "eastern_longitude western_longitude horizontal_resolution "\
+         "vertical_resolution\n");
       return EXIT_FAILURE;
    }
 

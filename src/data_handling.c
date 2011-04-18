@@ -159,15 +159,9 @@ dtype dtype_string_parse(char *dtype_string) {
 
    // Shortcut - compare the dtype_string to the data type name, if it
    // matches then store the dtype and set parsed to 1
-   #define parse(_type_, _size_, \
-                 _style_) if(strcmp(# _type_, \
-                                    dtype_string) == 0) { output.specifier = \
-                                                             _type_; \
-                                                          output.size \
-                                                             = _size_; \
-                                                          output.data_style = _style_; output.string = \
-                                                             # _type_; \
-                                                          parsed = 1; }
+   #define parse(_type_, _size_, _style_) if(strcmp(# _type_, dtype_string) == 0) \
+   { output.specifier =  _type_; output.size = _size_; \
+   output.data_style = _style_; output.string = # _type_; parsed = 1; }
    parse(uint8, 1, numeric);
    parse(uint16, 2, numeric);
    parse(uint32, 4, numeric);

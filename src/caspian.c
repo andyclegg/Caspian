@@ -112,70 +112,98 @@ void help(char *executable) {
       "Options                            Default                      Help\n");
    printf(" Index controls\n");
    printf(
-      "  -a/--input-lats <filename>                                    Specify filename for input latitude\n");
+      "  -a/--input-lats <filename>                                    "\
+      "Specify filename for input latitude\n");
    printf(
-      "  -o/--input-lons <filename>                                    Specify filename for input longitude\n");
+      "  -o/--input-lons <filename>                                    "\
+      "Specify filename for input longitude\n");
    printf(
-      "  -e/--input-time <filename>                                    Specify filename for input time\n");
+      "  -e/--input-time <filename>                                    "\
+      "Specify filename for input time\n");
    printf(
-      "  -p/--projection <string>         +proj=eqc +datum=WGS84       Specify projection using PROJ.4 compatible string\n");
+      "  -p/--projection <string>         +proj=eqc +datum=WGS84       "\
+      "Specify projection using PROJ.4 compatible string\n");
    printf(
-      "  -I/--save-index <filename>                                    Save the index to a file\n");
+      "  -I/--save-index <filename>                                    "\
+      "Save the index to a file\n");
    printf(
-      "  -i/--load-index <filename>                                    Load a pre-generated index from a file\n");
+      "  -i/--load-index <filename>                                    "\
+      "Load a pre-generated index from a file\n");
    printf("\n");
    printf(" Input data\n");
    printf(
-      "  -d/--input-data <filename>                                    Specify filename for input data\n");
+      "  -d/--input-data <filename>                                    "\
+      "Specify filename for input data\n");
    printf(
-      "  -t/--input-dtype <dtype>         float32                      Specify dtype for input data file\n");
+      "  -t/--input-dtype <dtype>         float32                      "\
+      "Specify dtype for input data file\n");
    printf(
-      "  -f/--input-fill-value <number>   -999.0                       Specify fill value for input data file\n");
+      "  -f/--input-fill-value <number>   -999.0                       "\
+      "Specify fill value for input data file\n");
    printf("\n");
    printf(" Output data\n");
    printf(
-      "  -D/--output-data <filename>                                   Specify filename for output data\n");
+      "  -D/--output-data <filename>                                   "\
+      "Specify filename for output data\n");
    printf(
-      "  -T/--output-dtype <dtype>        value of --input-dtype       Specify dtype for output data file\n");
+      "  -T/--output-dtype <dtype>        value of --input-dtype       "\
+      "Specify dtype for output data file\n");
    printf(
-      "  -F/--output-fill-value <number>  -999.0                       Specify fill value for output data file\n");
+      "  -F/--output-fill-value <number>  -999.0                       "\
+      "Specify fill value for output data file\n");
    printf(
-      "  -A/--output-lats <filename>                                   Specify filename for output latitude\n");
+      "  -A/--output-lats <filename>                                   "\
+      "Specify filename for output latitude\n");
    printf(
-      "  -O/--output-lons <filename>                                   Specify filename for output longitude\n");
+      "  -O/--output-lons <filename>                                   "\
+      "Specify filename for output longitude\n");
    printf("\n");
    printf(" Image generation\n");
    printf(
-      "  -h/--height <integer>            360                          Height of output grid\n");
+      "  -h/--height <integer>            360                          "\
+      "Height of output grid\n");
    printf(
-      "  -w/--width <integer>             720                          Width of output grid\n");
+      "  -w/--width <integer>             720                          "\
+      "Width of output grid\n");
    printf(
-      "  -V/--vres <number>               polar circumf. / (2*height)  Vertical resolution of output grid, in projection units (metres)\n");
+      "  -V/--vres <number>               polar circumf. / (2*height)  "\
+      "Vertical resolution of output grid, in projection units (metres)\n");
    printf(
-      "  -H/--hres <number>               equatorial circumf. / width  Horizontal resolution of output grid, in projection units (metres)\n");
+      "  -H/--hres <number>               equatorial circumf. / width  "\
+      "Horizontal resolution of output grid, in projection units (metres)\n");
    printf(
-      "  -y/--central-y <number>          0.0                          Vertical position of centre of output grid, in projection units (metres)\n");
+      "  -y/--central-y <number>          0.0                          "\
+      "Vertical position of centre of output grid, in projection units (metres)\n");
    printf(
-      "  -x/--central-x <number>          0.0                          Horizontal position of centre of output grid, in projection units (metres)\n");
+      "  -x/--central-x <number>          0.0                          "\
+      "Horizontal position of centre of output grid, in projection units (metres)\n");
    printf(
-      "  -S/--vsample <number>            value of --vres              Vertical sampling resolution\n");
+      "  -S/--vsample <number>            value of --vres              "\
+      "Vertical sampling resolution\n");
    printf(
-      "  -s/--hsample <number>            value of --hres              Horizontal sampling resolution\n");
+      "  -s/--hsample <number>            value of --hres              "\
+      "Horizontal sampling resolution\n");
    printf(
-      "  -r/--reduction-function <string> mean                         Choose reduction function to use\n");
+      "  -r/--reduction-function <string> mean                         "\
+      "Choose reduction function to use\n");
    printf(
-      "  -q/--time-min                    -inf                         Earliest time to select from\n");
+      "  -q/--time-min                    -inf                         "\
+      "Earliest time to select from\n");
    printf(
-      "  -Q/--time-max                    +inf                         Latest time to select from\n");
+      "  -Q/--time-max                    +inf                         "\
+      "Latest time to select from\n");
    printf("\n");
    printf(" General\n");
    printf(
-      "  -+/--verbose                                                  Increase verbosity\n");
+      "  -+/--verbose                                                  "\
+      "Increase verbosity\n");
    printf(
-      "  -?/--help                                                     Show this help message\n");
+      "  -?/--help                                                     "\
+      "Show this help message\n");
    printf("\n");
    printf(
-      "Numeric functions: mean, weighted_mean, median, newest, numeric_nearest_neighbour\n");
+      "Numeric functions: mean, weighted_mean, median, newest,"\
+      "numeric_nearest_neighbour\n");
    printf("Numeric function dtypes: ");
    printf("uint8, uint16, uint32, ");
    #ifdef SIXTYFOURBIT
@@ -477,7 +505,8 @@ int main(int argc, char **argv) {
    if (!saving_index && !generating_image) {
       fprintf(
          stderr,
-         "Without building and saving an index, or generating an image, there is nothing to do.\n");
+         "Without building and saving an index, or generating an image, there "\
+         "is nothing to do.\n");
       return EXIT_FAILURE;
    }
 
@@ -487,18 +516,19 @@ int main(int argc, char **argv) {
    if (!loading_index) {
       if (input_lat_filename == NULL || input_lon_filename == NULL ||
           projection_string == NULL) {
-         fprintf(
-            stderr,
-            "Unless you are loading a pre-generated index from disk, you must provide --input-lats, --input-lons, --input-time, and --projection\nSee --help for more information.\n");
+         fprintf(stderr,
+            "Unless you are loading a pre-generated index from disk, you must provide"\
+            "--input-lats, --input-lons, --input-time, and --projection\nSee --help"\
+            "for more information.\n");
          return EXIT_FAILURE;
       }
    }
 
    if (generating_image) {
       if (input_data_filename == NULL || output_data_filename == NULL) {
-         fprintf(
-            stderr,
-            "When generating an image, you must provide --input-data and --output-data\nSee --help for more information.");
+         fprintf( stderr,
+            "When generating an image, you must provide --input-data and "\
+            "--output-data\nSee --help for more information.");
          return EXIT_FAILURE;
       }
    }
@@ -511,17 +541,17 @@ int main(int argc, char **argv) {
       // Input and output dtype must be the same and coded
       if (input_dtype.data_style != coded || output_dtype.data_style !=
           coded || !dtype_equal(input_dtype, output_dtype)) {
-         fprintf(
-            stderr,
-            "When using a coded mapping function, input and output dtype must be the same, and of coded style\n");
+         fprintf( stderr,
+            "When using a coded mapping function, input and output dtype must "\
+            "be the same, and of coded style\n");
          return EXIT_FAILURE;
       }
    } else if (selected_reduction_function.data_style == numeric) {
       if (input_dtype.data_style != numeric || output_dtype.data_style !=
           numeric) {
-         fprintf(
-            stderr,
-            "When using a numeric mapping function, input and output dtype must be numeric\n");
+         fprintf( stderr,
+            "When using a numeric mapping function, input and output dtype must"\
+            "be numeric\n");
          return EXIT_FAILURE;
       }
    }

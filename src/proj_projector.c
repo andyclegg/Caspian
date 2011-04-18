@@ -150,9 +150,9 @@ projector *get_proj_projector_from_file(FILE *input_file) {
 
    // Paranoid checks on projection string
    if (projection_string[projection_string_length-1] != '\0') {
-      fprintf(
-         stderr,
-         "Corrupted string read from file (null terminator doesn't exist in expected position (%d), found %d)\n",
+      fprintf( stderr,
+         "Corrupted string read from file (null terminator doesn't exist in "\
+         "expected position (%d), found %d)\n",
          projection_string_length,
          projection_string[projection_string_length - 1]);
       // Don't attempt to print out the projection string as we know it's
