@@ -1,5 +1,9 @@
-SOURCE_FILES=src/median.c src/caspian.c src/result_set.c src/rawfile_coordinate_reader.c src/kd_tree.c src/data_handling.c src/reduction_functions.c src/grid.c src/gridding.c src/proj_projector.c src/io_helper.c
-OBJECTS=build/median.o build/caspian.o build/result_set.o build/rawfile_coordinate_reader.o build/kd_tree.o build/data_handling.o build/reduction_functions.o build/grid.o build/gridding.o build/proj_projector.o build/io_helper.o
+SOURCE_FILES=src/median.c src/caspian.c src/result_set.c src/rawfile_coordinate_reader.c\
+src/kd_tree.c src/data_handling.c src/reduction_functions.c src/grid.c src/gridding.c\
+src/proj_projector.c src/io_helper.c
+OBJECTS=build/median.o build/caspian.o build/result_set.o build/rawfile_coordinate_reader.o\
+build/kd_tree.o build/data_handling.o build/reduction_functions.o build/grid.o\
+build/gridding.o build/proj_projector.o build/io_helper.o
 CC=gcc
 LDFLAGS=-lm -lproj
 CFLAGS=-fopenmp -std=c99 -Wall -Werror
@@ -24,28 +28,34 @@ bin/projcalc: src/projection_calculator.c
 build/median.o: src/median.c src/median.h
 	$(OPT_CC) src/median.c -o build/median.o
 
-build/caspian.o: src/caspian.c src/coordinate_reader.h src/data_handling.h src/gridding.h src/grid.h src/io_helper.h src/kd_tree.h src/proj_projector.h src/projector.h src/rawfile_coordinate_reader.h src/reduction_functions.h src/spatial_index.h
+build/caspian.o: src/caspian.c src/coordinate_reader.h src/data_handling.h\
+src/gridding.h src/grid.h src/io_helper.h src/kd_tree.h src/proj_projector.h\
+src/projector.h src/rawfile_coordinate_reader.h src/reduction_functions.h src/spatial_index.h
 	$(OPT_CC) src/caspian.c -o build/caspian.o
 
 build/result_set.o: src/result_set.c src/result_set.h
 	$(OPT_CC) src/result_set.c -o build/result_set.o
 
-build/rawfile_coordinate_reader.o: src/rawfile_coordinate_reader.c src/rawfile_coordinate_reader.h src/coordinate_reader.h
+build/rawfile_coordinate_reader.o: src/rawfile_coordinate_reader.c\
+src/rawfile_coordinate_reader.h src/coordinate_reader.h
 	$(OPT_CC) src/rawfile_coordinate_reader.c -o build/rawfile_coordinate_reader.o
 
-build/kd_tree.o: src/kd_tree.c src/kd_tree.h src/coordinate_reader.h src/data_handling.h src/spatial_index.h src/proj_projector.h src/projector.h src/result_set.h
+build/kd_tree.o: src/kd_tree.c src/kd_tree.h src/coordinate_reader.h src/data_handling.h\
+src/spatial_index.h src/proj_projector.h src/projector.h src/result_set.h
 	$(OPT_CC) src/kd_tree.c -o build/kd_tree.o
 
 build/data_handling.o: src/data_handling.c src/data_handling.h
 	$(OPT_CC) src/data_handling.c -o build/data_handling.o
 
-build/reduction_functions.o: src/reduction_functions.c src/reduction_functions.h src/median.h src/result_set.h
+build/reduction_functions.o: src/reduction_functions.c src/reduction_functions.h\
+src/median.h src/result_set.h
 	$(OPT_CC) src/reduction_functions.c -o build/reduction_functions.o
 
 build/grid.o: src/grid.c src/grid.h src/projector.h
 	$(OPT_CC) src/grid.c -o build/grid.o
 
-build/gridding.o: src/gridding.c src/gridding.h src/io_spec.h src/reduction_functions.h src/result_set.h
+build/gridding.o: src/gridding.c src/gridding.h src/io_spec.h src/reduction_functions.h\
+src/result_set.h
 	$(OPT_CC) src/gridding.c -o build/gridding.o
 
 build/proj_projector.o: src/proj_projector.c src/proj_projector.h src/projector.h
@@ -70,12 +80,16 @@ doc/html/index.html: src/*
 bin/quickview: src/quickview
 	cp src/quickview bin/quickview
 
-build_testcases: caspian test/check_data_handling.test test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test test/check_median.test test/check_result_set.test test/check_proj_projector.test test/check_kd_tree.test test/check_reduction_functions.test
+build_testcases: caspian test/check_data_handling.test\
+test/check_rawfile_coordinate_reader.test test/check_grid.test test/check_io_helper.test\
+test/check_median.test test/check_result_set.test test/check_proj_projector.test\
+test/check_kd_tree.test test/check_reduction_functions.test
 
 test/check_data_handling.test: build/data_handling.o test/check_data_handling.c
 	$(CHECK_CC) $^ -o $@
 
-test/check_rawfile_coordinate_reader.test: build/rawfile_coordinate_reader.o build/proj_projector.o test/check_rawfile_coordinate_reader.c
+test/check_rawfile_coordinate_reader.test: build/rawfile_coordinate_reader.o\
+build/proj_projector.o test/check_rawfile_coordinate_reader.c
 	$(CHECK_CC) $^ -lproj -o $@
 
 test/check_grid.test: build/grid.o build/proj_projector.o test/check_grid.c
@@ -93,10 +107,12 @@ test/check_result_set.test: build/result_set.o test/check_result_set.c
 test/check_proj_projector.test: build/proj_projector.o test/check_proj_projector.c
 	$(CHECK_CC) $^ -lproj -o $@
 
-test/check_kd_tree.test: build/kd_tree.o build/proj_projector.o build/rawfile_coordinate_reader.o build/result_set.o test/check_kd_tree.c
+test/check_kd_tree.test: build/kd_tree.o build/proj_projector.o\
+build/rawfile_coordinate_reader.o build/result_set.o test/check_kd_tree.c
 	$(CHECK_CC) $^ -lproj -o $@
 
-test/check_reduction_functions.test: build/reduction_functions.o build/result_set.o build/data_handling.o build/median.o test/check_reduction_functions.c
+test/check_reduction_functions.test: build/reduction_functions.o build/result_set.o\
+build/data_handling.o build/median.o test/check_reduction_functions.c
 	$(CHECK_CC) $^ -o $@
 
 run_testcases: build_testcases
