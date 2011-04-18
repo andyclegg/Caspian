@@ -1,8 +1,8 @@
 /**
- * @file
- *
- * Defines a PROJ.4-based projector
- */
+  * @file
+  *
+  * Defines a PROJ.4-based projector
+  */
 #ifndef HEADER_PROJ_PROJECTOR
 #define HEADER_PROJ_PROJECTOR
 #include <stdio.h>

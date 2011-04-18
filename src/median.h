@@ -1,6 +1,6 @@
 /**
- * @file
- */
+  * @file
+  */
 #ifndef HEADER_MEDIAN
 #define HEADER_MEDIAN
 
