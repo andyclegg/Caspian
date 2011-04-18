@@ -1,8 +1,9 @@
 /**
- * @file
- *
- * Implentation of a data structure which reads latitude/longitude/time observations, projects the latitude and longitude, and returns the results.
- */
+  * @file
+  *
+  * Implentation of a data structure which reads latitude/longitude/time
+  *observations, projects the latitude and longitude, and returns the results.
+  */
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -14,12 +15,13 @@
 #include "rawfile_coordinate_reader.h"
 
 /*
- * Free the rawfile coordinate reader and close the associated files.
- *
- * @param reader The rawfile coordinate reader to free.
- */
+  * Free the rawfile coordinate reader and close the associated files.
+  *
+  * @param reader The rawfile coordinate reader to free.
+  */
 void _rawfile_coordinate_reader_free(coordinate_reader *tofree) {
-   rawfile_coordinate_reader *internals = (rawfile_coordinate_reader *) tofree->internals;
+   rawfile_coordinate_reader *internals =
+      (rawfile_coordinate_reader *) tofree->internals;
 
    // Close files
    fclose(internals->lat_file);
@@ -31,17 +33,20 @@ void _rawfile_coordinate_reader_free(coordinate_reader *tofree) {
 }
 
 /*
- * Read and project a single observation from a rawfile coordinate reader.
- *
- * @param reader The coordinate reader to read the observation from.
- * @param x A float pointer specifying where the X value should be stored.
- * @param y A float pointer specifying where the Y value should be stored.
- * @param t A float pointer specifying where the T value should be stored.
- * @return 0 if finished, 1 if more observations are available.
- */
-int _rawfile_coordinate_reader_read(coordinate_reader *source, float *x, float *y, float *t) {
+  * Read and project a single observation from a rawfile coordinate reader.
+  *
+  * @param reader The coordinate reader to read the observation from.
+  * @param x A float pointer specifying where the X value should be stored.
+  * @param y A float pointer specifying where the Y value should be stored.
+  * @param t A float pointer specifying where the T value should be stored.
+  * @return 0 if finished, 1 if more observations are available.
+  */
+int _rawfile_coordinate_reader_read(coordinate_reader *source, float *x,
+                                    float *y,
+                                    float *t) {
 
-   rawfile_coordinate_reader *internals = (rawfile_coordinate_reader *) source->internals;
+   rawfile_coordinate_reader *internals =
+      (rawfile_coordinate_reader *) source->internals;
 
    float latitude, longitude;
 
@@ -60,7 +65,8 @@ int _rawfile_coordinate_reader_read(coordinate_reader *source, float *x, float *
    }
 
    // Project the horizontal coordinates
-   projected_coordinates output = source->input_projector->project(source->input_projector, longitude, latitude);
+   projected_coordinates output = source->input_projector->project(
+      source->input_projector, longitude, latitude);
 
    // Store the projected results
    *y = (float) output.y;
@@ -74,15 +80,22 @@ int _rawfile_coordinate_reader_read(coordinate_reader *source, float *x, float *
 }
 
 /**
- * Construct a coordinate reader from the given files, using a specified projector.
- *
- * @param lat_filename The path to the file containing latitudes (may be NULL).
- * @param lon_filename The path to the file containing longitudes (may be NULL).
- * @param time_filename The path to the file containing times (may be NULL).
- * @param input_projector A projector to project the horizontal coordinates from the files into latitude/longitude space.
- * @return A pointer to an initialised coordinate_reader, or NULL on failure.
- */
-coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lon_filename, char *time_filename, projector *input_projector) {
+  * Construct a coordinate reader from the given files, using a specified
+  *projector.
+  *
+  * @param lat_filename The path to the file containing latitudes (may be NULL).
+  * @param lon_filename The path to the file containing longitudes (may be
+  *NULL).
+  * @param time_filename The path to the file containing times (may be NULL).
+  * @param input_projector A projector to project the horizontal coordinates
+  *from the files into latitude/longitude space.
+  * @return A pointer to an initialised coordinate_reader, or NULL on failure.
+  */
+coordinate_reader *get_coordinate_reader_from_files(char *lat_filename,
+                                                    char *lon_filename,
+                                                    char *time_filename,
+                                                    projector *input_projector)
+{
 
    // Open the files for reading, check sizes
    struct stat lat_stat, lon_stat, time_stat;
@@ -91,35 +104,47 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
 
    // Stat all the files to get their sizes (and check their existence!)
    if(stat(lat_filename, &lat_stat) != 0) {
-      fprintf(stderr, "Could not stat the latitude file %s (%s)\n", lat_filename, strerror(errno));
+      fprintf(stderr, "Could not stat the latitude file %s (%s)\n",
+              lat_filename, strerror(
+                 errno));
       return NULL;
    }
    if(stat(lon_filename, &lon_stat) != 0) {
-      fprintf(stderr, "Could not stat the longitude file %s (%s)\n", lon_filename, strerror(errno));
+      fprintf(stderr, "Could not stat the longitude file %s (%s)\n",
+              lon_filename, strerror(
+                 errno));
       return NULL;
    }
    if (time_filename != NULL) {
       if(stat(time_filename, &time_stat) != 0) {
-         fprintf(stderr, "Could not stat the time file %s (%s)\n", time_filename, strerror(errno));
+         fprintf(stderr, "Could not stat the time file %s (%s)\n",
+                 time_filename, strerror(
+                    errno));
          return NULL;
       }
    }
 
    //Check file sizes are all equal
    if (!(lat_stat.st_size == lon_stat.st_size)) {
-      fprintf(stderr, "The sizes of the latitude and longitude files are not equal\n");
+      fprintf(stderr,
+              "The sizes of the latitude and longitude files are not equal\n");
       return NULL;
    }
    if (time_filename != NULL) {
       if (!(lat_stat.st_size == time_stat.st_size)) {
-         fprintf(stderr, "The sizes of the latitude/longitude files and the time file are not equal\n");
+         fprintf(
+            stderr,
+            "The sizes of the latitude/longitude files and the time file are not equal\n");
          return NULL;
       }
    }
 
    // Check file size is a multiple of the size of a float
    if ((lat_stat.st_size % sizeof(float)) != 0) {
-      fprintf(stderr, "The size of the latitude/longitude/time files is not divisible by %Zd\n", sizeof(float));
+      fprintf(
+         stderr,
+         "The size of the latitude/longitude/time files is not divisible by %Zd\n",
+         sizeof(float));
       return NULL;
    }
 
@@ -129,14 +154,18 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
    // Open the latitudes file
    lat_file = fopen(lat_filename, "r");
    if (lat_file == NULL) {
-      fprintf(stderr, "Couldn't open latitude file %s (%s)\n", lat_filename, strerror(errno));
+      fprintf(stderr, "Couldn't open latitude file %s (%s)\n", lat_filename,
+              strerror(
+                 errno));
       return NULL;
    }
 
    // Open the longitudes file
    lon_file = fopen(lon_filename, "r");
    if (lon_file == NULL) {
-      fprintf(stderr, "Couldn't open longitude file %s (%s)\n", lon_filename, strerror(errno));
+      fprintf(stderr, "Couldn't open longitude file %s (%s)\n", lon_filename,
+              strerror(
+                 errno));
       return NULL;
    }
 
@@ -148,14 +177,18 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename, char *lo
 
    time_file = fopen(time_filename, "r");
    if (time_file == NULL) {
-      fprintf(stderr, "Couldn't open time file %s (%s)\n", time_filename, strerror(errno));
+      fprintf(stderr, "Couldn't open time file %s (%s)\n", time_filename,
+              strerror(
+                 errno));
       return NULL;
    }
 
    // Allocate the new rawfile coordinate reader
-   rawfile_coordinate_reader *new_rawfile_reader = malloc(sizeof(rawfile_coordinate_reader));
+   rawfile_coordinate_reader *new_rawfile_reader =
+      malloc(sizeof(rawfile_coordinate_reader));
    if (new_rawfile_reader == NULL) {
-      fprintf(stderr, "Failed to allocate space for a rawfile_coordinate_reader\n");
+      fprintf(stderr,
+              "Failed to allocate space for a rawfile_coordinate_reader\n");
       exit(EXIT_FAILURE);
    }
 

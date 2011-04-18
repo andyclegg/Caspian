@@ -1,8 +1,8 @@
 /**
- * @file
- *
- * Implementation of result_set
- */
+  * @file
+  *
+  * Implementation of result_set
+  */
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,15 +10,16 @@
 #include "result_set.h"
 
 /**
- * Insert a single item into a result set.
- *
- * @param set The initialised result_set to insert the item into.
- * @param x The x-value of the new item.
- * @param y The y-value of the new item.
- * @param t The time value of the new item.
- * @param record_index The index of the new item.
- */
-void result_set_insert(result_set *set, float x, float y, float t, int record_index) {
+  * Insert a single item into a result set.
+  *
+  * @param set The initialised result_set to insert the item into.
+  * @param x The x-value of the new item.
+  * @param y The y-value of the new item.
+  * @param t The time value of the new item.
+  * @param record_index The index of the new item.
+  */
+void result_set_insert(result_set *set, float x, float y, float t,
+                       int record_index) {
    result_set_item *new_item = malloc(sizeof(result_set_item));
    if (new_item == NULL) {
       fprintf(stderr, "Could not allocate space for a single result_set_item\n");
@@ -50,11 +51,11 @@ void result_set_insert(result_set *set, float x, float y, float t, int record_in
 }
 
 /**
- * Return the next result_set_item from a result_set.
- *
- * @param set The result_set to retrieve the next item from.
- * @return A pointer to the next result_set_item.
- */
+  * Return the next result_set_item from a result_set.
+  *
+  * @param set The result_set to retrieve the next item from.
+  * @return A pointer to the next result_set_item.
+  */
 result_set_item *result_set_iterate(result_set *set) {
    // Get the value which will be returned (possibly NULL)
    result_set_item *to_return = set->current;
@@ -67,10 +68,10 @@ result_set_item *result_set_iterate(result_set *set) {
 }
 
 /**
- * Free a result_set.
- *
- * @param set The result_set to free.
- */
+  * Free a result_set.
+  *
+  * @param set The result_set to free.
+  */
 void result_set_free(result_set *set) {
    // Iterate over the linked list, freeing each item
    set->current = set->head;
@@ -85,10 +86,10 @@ void result_set_free(result_set *set) {
 }
 
 /**
- * Initialise an empty result set.
- *
- * @return A pointer to an initialised result set.
- */
+  * Initialise an empty result set.
+  *
+  * @return A pointer to an initialised result set.
+  */
 result_set *result_set_init() {
    result_set *set = malloc(sizeof(result_set));
    if (set == NULL) {
