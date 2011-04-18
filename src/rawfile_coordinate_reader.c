@@ -132,9 +132,9 @@ coordinate_reader *get_coordinate_reader_from_files(char *lat_filename,
    }
    if (time_filename != NULL) {
       if (!(lat_stat.st_size == time_stat.st_size)) {
-         fprintf(
-            stderr,
-            "The sizes of the latitude/longitude files and the time file are not equal\n");
+         fprintf( stderr,
+            "The sizes of the latitude/longitude files and the time file are not"\
+            "equal\n");
          return NULL;
       }
    }

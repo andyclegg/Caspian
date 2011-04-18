@@ -384,7 +384,8 @@ void verify_tree(kdtree *tree_p) {
                printf("right");
             }
             printf(
-               " child (%d) of a parent tree node stored at %d of discrimination type %d, the parent discriminator %f is invalid\n",
+               " child (%d) of a parent tree node stored at %d of discrimination "\
+               "type %d, the parent discriminator %f is invalid\n",
                temp_tree_node_index, parent_tree_node,
                parent_discriminator_type,
                parent_discriminator);
