@@ -26,9 +26,9 @@ Gridding is the process of placing observed spatial data (from satellites, plane
 Caspian is a gridder that treats data as a mass of individual observations, and grids this data using a variety of data reduction algorithms. Data is projected into the desired projection and loaded into an index, which takes the form of an adaptive K-D tree; a grid is formed and divided into cells, and each of these cells is filled by querying the index for points that fall into the cell, and then using a data reduction algorithm to derive a single value for that cell.
 
 \section{Input and Output Formats}
-Both inputs and outputs are in the form of flat binary files. Latitudes and longitudes are input and output in 32-bit IEEE float; the format of the data file (input and output) is specified at run time.
+Both inputs and outputs are in the form of flat binary files. Latitudes and longitudes are input and output in IEEE 32-bit floats; the format of the data file (input and output) is specified at run time.
 
-There are 2 modes that decide how the data is interpreted, and what mapping functions can be used. These modes are numeric, and coded. Coded mode is for data that cannot be handled as a number (numeric); some sort of binary data (such as flags) stored in a grid. When handling data of this type, the size of each item of data is specified (\textit{coded8}, \textit{coded16}, \textit{coded32}...), and the contents of the data are never modified.
+There are 2 modes that decide how the data is interpreted, and what reduction functions can be used. These modes are numeric, and coded. Coded mode is for data that cannot be handled as a number (numeric); some sort of binary data (such as flags) stored in a grid. When handling data of this type, the size of each item of data is specified (\textit{coded8}, \textit{coded16}, \textit{coded32}...), and the contents of the data are never modified.
 
 \section{Specifying the output grid}
 A variety of parameters are needed to specify the output grid.
@@ -50,8 +50,8 @@ Width: 1629, Height: 1647
 \end{verbatim}
 This command has provided the remaining parameters. Note that this command is not applicable in all cases (such as polar stereographic projections); this is why the bounding latitudes and longitudes are not provided directly to Caspian.
 
-\section{Controlling mapping}
-The main controls over mapping are in the selection of the mapping function, and in the selection of the sampling rates.
+\section{Controlling gridding}
+The main controls over gridding are in the selection of the reduction function, and in the selection of the sampling rates.
 \begin{figure}
 \centering
 \includegraphics{resolution_and_sampling.eps}
@@ -63,14 +63,14 @@ While the horizontal and vertical resolution define the distance between pixel c
 
 To set the sampling rate, use \texttt{--vsample} and \texttt{--hsample}. By default these are equal to the vertical and horizontal resolutions respectively.
 
-\subsection{Mapping Function}
-There are currently five mapping functions; four of which can be used with numerical data and one of which can be used for coded data.
+\subsection{Reduction Function}
+There are currently six reduction functions; five of which can be used with numerical data and one of which can be used for coded data.
 \begin{description}
 \item[Mean] -- a simple mean of all selected points.
 \item[Weighted Mean] -- a mean of all selected points, weighted by distance. The distance is the euclidean distance between the selected point and the centre of the pixel (in metres).
 \item[Median] -- the value of the pixel is the median value of all selected points, regardless of their distance from the centre of the pixel.
 \item[Newest] -- uses additional per-pixel time information to select the newest pixel found in a given cell.
-\item[Nearest Neighbour (Coded)] -- the value of the pixel is the value of the nearest point to the centre.
+\item[Nearest Neighbour (Coded \& Numeric variants)] -- the value of the pixel is the value of the nearest point to the centre.
 \end{description}
 
 
@@ -86,10 +86,13 @@ bin/caspian --input-data data --input-lats latitudes \
 --central-x 895917.8125 --central-y 4303742.5 \
 --input-dtype float32 --output-dtype float32 \
 --hsample 3300.0 --vsample 3300.0
---mapping-function median
+--reduction-function median
 \end{verbatim}
 
 The output files (uk\_data, uk\_lats, and uk\_lons) will all have the same size (equal to width*height); the uk\_lats and uk\_lons files specify geolocation for the projected data.
+
+\subsection{Using time data}
+Time data is provided in the same format as latitudes and longitudes -- IEEE 32-bit float files, containing the same number of values as the latitude, longitude and data files. The method by which the time value is converted to a floating point number is not specified -- seconds or milliseconds since an arbitrary epoch would be appropriate. The use of time data in gridding can be controlled using the \texttt{--time-min} and \texttt{--time-max} options, and by using the `newest' reduction function.
 
 \subsection{Re-using the spatial index}
 Caspian performs two main tasks; generating a spatial index to use for gridding, and then performing the actual gridding. A spatial index takes into account latitude, longitude (and potentially time) information for each pixel, and is specific to a given projection. However, it is not tied to a particular set of data values. Because of this, when gridding different products generated from the same set of data, it is possible to speed up the overall process by generating a spatial index once and using it for all further gridding tasks.
