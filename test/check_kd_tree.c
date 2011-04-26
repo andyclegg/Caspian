@@ -32,7 +32,8 @@ START_TEST(test_valid_kdtree) {
    projector *p = get_proj_projector_from_string("+proj=eqc +datum=WGS84");
 
    // Create a rawfile latlon coordinate reader to read these files back in
-   coordinate_reader *c = get_coordinate_reader_from_files("test_kdtree_lats", "test_kdtree_lons", NULL, p);
+   coordinate_reader *c = get_coordinate_reader_from_files(
+                              "test_kdtree_lats", "test_kdtree_lons", NULL, p);
    fail_if(c == NULL);
 
    // Build the tree
