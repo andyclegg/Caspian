@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
 
    // Output data
    char *output_data_filename = NULL;
-   dtype output_dtype;
+   dtype output_dtype = input_dtype; // Default may be overriden later
    NUMERIC_WORKING_TYPE output_fill_value = -999.0;
    char *output_lat_filename = NULL;
    char *output_lon_filename = NULL;
