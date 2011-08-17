@@ -53,7 +53,7 @@ spherical_coordinates _proj_inverse_project(projector *p, float y, float x) {
 
    // Convert the result back to degrees
    spherical_coordinates output =
-   {pj_output.u * RAD_TO_DEG, pj_output.v * RAD_TO_DEG};
+   {pj_output.v * RAD_TO_DEG, pj_output.u * RAD_TO_DEG};
    return output;
 }
 
