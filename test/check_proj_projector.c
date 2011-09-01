@@ -18,7 +18,7 @@ START_TEST(test_proj) {
    fail_unless(pc.y == 3339584.75);
 
    // Inverse-project some data and compare
-   spherical_coordinates sc = p->inverse_project(p, 5009377.0, 3339584.75);
+   spherical_coordinates sc = p->inverse_project(p, 3339584.75, 5009377.0);
    fail_unless(sc.latitude == 30.0);
    fail_unless(sc.longitude == 45.0);
 
